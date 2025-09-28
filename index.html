@@ -1,236 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thuto's Daily Betting Tips</title>
-  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.client.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.22.9/babel.min.js"></script>
+
+  <!-- React + ReactDOM (development mode, fine for GitHub Pages) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- Babel (so we can use JSX directly in the browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-    <div id="root"></div>
-    <script type="text/babel">
-        // Mock data for betting suggestions
-        const mockSuggestions = [
-            {
-                id: 1,
-                match: "Arsenal vs Chelsea",
-                league: "Premier League",
-                date: "2025-09-28",
-                time: "15:00",
-                market: "Double Chance (1X)",
-                odds: 1.22,
-                confidence: "High",
-                reasoning: "Arsenal's xG: 2.1/game, Chelsea's xGA: 1.8. Arsenal won 80% of last 5 home games, conceding 2 goals.",
-                form: { home: "W-W-D-L-W", away: "L-D-W-L-D" },
-                headToHead: "Arsenal won 3 of last 5",
-                injuries: { home: "None", away: "J. Felix (out)" },
-                betwayLink: "https://www.betway.com"
-            },
-            {
-                id: 2,
-                match: "Bayern Munich vs Dortmund",
-                league: "Bundesliga",
-                date: "2025-09-28",
-                time: "18:30",
-                market: "Over 2.5 Goals",
-                odds: 1.19,
-                confidence: "Medium-High",
-                reasoning: "Bayern averages 3.2 goals scored, Dortmund 2.8. Last 3 H2H matches had 3+ goals.",
-                form: { home: "W-W-W-D-L", away: "W-L-D-W-W" },
-                headToHead: "Bayern won 4 of last 5",
-                injuries: { home: "M. Neuer (doubtful)", away: "None" },
-                betwayLink: "https://www.betway.com"
-            }
-        ];
+<body class="bg-gray-100">
+  <div id="root"></div>
 
-        const mockPerformance = [
-            { date: "2025-09-26", win: 2, loss: 0, void: 1, profit: 0.42 },
-            { date: "2025-09-25", win: 1, loss: 1, void: 0, profit: -0.01 }
-        ];
+  <script type="text/babel">
+    // Mock data for betting suggestions
+    const mockSuggestions = [
+      {
+        id: 1,
+        match: "Arsenal vs Chelsea",
+        league: "Premier League",
+        date: "2025-09-28",
+        time: "15:00",
+        market: "Double Chance (1X)",
+        odds: 1.22,
+        confidence: "High",
+        reasoning: "Arsenal's xG: 2.1/game, Chelsea's xGA: 1.8. Arsenal won 80% of last 5 home games, conceding 2 goals.",
+        form: { home: "W-W-D-L-W", away: "L-D-W-L-D" },
+        headToHead: "Arsenal won 3 of last 5",
+        injuries: { home: "None", away: "J. Felix (out)" },
+        betwayLink: "https://www.betway.com"
+      },
+      {
+        id: 2,
+        match: "Bayern Munich vs Dortmund",
+        league: "Bundesliga",
+        date: "2025-09-28",
+        time: "18:30",
+        market: "Over 2.5 Goals",
+        odds: 1.19,
+        confidence: "Medium-High",
+        reasoning: "Bayern averages 3.2 goals scored, Dortmund 2.8. Last 3 H2H matches had 3+ goals.",
+        form: { home: "W-W-W-D-L", away: "W-L-D-W-W" },
+        headToHead: "Bayern won 4 of last 5",
+        injuries: { home: "M. Neuer (doubtful)", away: "None" },
+        betwayLink: "https://www.betway.com"
+      }
+    ];
 
-        // Main App Component
-        function App() {
-            const [favoriteLeagues, setFavoriteLeagues] = React.useState(["Premier League"]);
-            const [isPremium, setIsPremium] = React.useState(false);
-            const [notificationTime, setNotificationTime] = React.useState("08:00");
-            const [selectedDate, setSelectedDate] = React.useState("2025-09-28");
+    const mockPerformance = [
+      { date: "2025-09-26", win: 2, loss: 0, void: 1, profit: 0.42 },
+      { date: "2025-09-25", win: 1, loss: 1, void: 0, profit: -0.01 }
+    ];
 
-            const toggleFavoriteLeague = (league) => {
-                setFavoriteLeagues((prev) =>
-                    prev.includes(league)
-                        ? prev.filter((l) => l !== league)
-                        : [...prev, league]
-                );
-            };
+    // Main App Component
+    function App() {
+      const [favoriteLeagues, setFavoriteLeagues] = React.useState(["Premier League"]);
+      const [isPremium, setIsPremium] = React.useState(false);
+      const [notificationTime, setNotificationTime] = React.useState("08:00");
+      const [selectedDate, setSelectedDate] = React.useState("2025-09-28");
 
-            const filteredSuggestions = mockSuggestions.filter((sug) =>
-                favoriteLeagues.length === 0 || favoriteLeagues.includes(sug.league)
-            );
+      const toggleFavoriteLeague = (league) => {
+        setFavoriteLeagues((prev) =>
+          prev.includes(league)
+            ? prev.filter((l) => l !== league)
+            : [...prev, league]
+        );
+      };
 
-            return (
-                <div className="min-h-screen bg-gray-100 p-4">
-                    <header className="bg-blue-600 text-white p-4 rounded-lg shadow">
-                        <h1 className="text-2xl font-bold">Thuto's Daily Betting Tips</h1>
-                        <p className="text-sm">Intelligent, data-driven football betting suggestions</p>
-                    </header>
+      const filteredSuggestions = mockSuggestions.filter((sug) =>
+        favoriteLeagues.length === 0 || favoriteLeagues.includes(sug.league)
+      );
 
-                    <div className="mt-4">
-                        <h2 className="text-xl font-semibold">Today's Suggestions</h2>
-                        <div className="mt-2 space-y-4">
-                            {filteredSuggestions.map((suggestion) => (
-                                <MatchCard key={suggestion.id} suggestion={suggestion} isPremium={isPremium} />
-                            ))}
-                        </div>
+      return (
+        <div className="min-h-screen p-4">
+          <header className="bg-blue-600 text-white p-4 rounded-lg shadow">
+            <h1 className="text-2xl font-bold">Thuto's Daily Betting Tips</h1>
+            <p className="text-sm">Intelligent, data-driven football betting suggestions</p>
+          </header>
+
+          <div className="mt-4">
+            <h2 className="text-xl font-semibold">Today's Suggestions</h2>
+            <div className="mt-2 space-y-4">
+              {filteredSuggestions.map((suggestion) => (
+                <MatchCard key={suggestion.id} suggestion={suggestion} isPremium={isPremium} />
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold">Favorite Leagues</h2>
+            <div className="flex space-x-2 mt-2">
+              {["Premier League", "Bundesliga", "La Liga"].map((league) => (
+                <button
+                  key={league}
+                  className={`px-3 py-1 rounded ${favoriteLeagues.includes(league) ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                  onClick={() => toggleFavoriteLeague(league)}
+                >
+                  {league}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold">Calendar View</h2>
+            <CalendarView
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              performance={mockPerformance}
+            />
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold">Settings</h2>
+            <div className="mt-2">
+              <label className="block">Notification Time:</label>
+              <input
+                type="time"
+                value={notificationTime}
+                onChange={(e) => setNotificationTime(e.target.value)}
+                className="border p-2 rounded"
+              />
+              <button
+                className="ml-2 bg-blue-500 text-white px-3 py-1 rounded"
+                onClick={() => alert(`Notifications set for ${notificationTime}`)}
+              >
+                Save
+              </button>
+            </div>
+            <div className="mt-2">
+              <label className="block">Premium Subscription:</label>
+              <button
+                className={`px-3 py-1 rounded ${isPremium ? "bg-green-500" : "bg-blue-500"} text-white`}
+                onClick={() => setIsPremium(!isPremium)}
+              >
+                {isPremium ? "Subscribed" : "Upgrade to Premium"}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold">Performance</h2>
+            <p>Overall Success Rate: 70% (last 3 months)</p>
+            <p className="text-sm text-gray-600">
+              Disclaimer: Betting involves risk. Past performance is not indicative of future results.
+            </p>
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold">Learn More</h2>
+            <p className="text-sm">
+              <a href="#" className="text-blue-500" onClick={() => alert("Explaining Double Chance: Bet on two outcomes (e.g., Home or Draw).")}>
+                What is Double Chance?
+              </a>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Match Card Component
+    function MatchCard({ suggestion, isPremium }) {
+      const [isExpanded, setIsExpanded] = React.useState(false);
+
+      return (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="flex justify-between">
+            <div>
+              <h3 className="font-bold">{suggestion.match}</h3>
+              <p>{suggestion.league} | {suggestion.date} {suggestion.time}</p>
+              <p>Bet: {suggestion.market} @ {suggestion.odds} (Confidence: {suggestion.confidence})</p>
+              <p className="text-sm">Why? {suggestion.reasoning}</p>
+            </div>
+            <button
+              className="bg-blue-500 text-white px-3 py-1 rounded"
+              onClick={() => window.open(suggestion.betwayLink, "_blank")}
+            >
+              Bet Now
+            </button>
+          </div>
+          {isPremium && (
+            <button
+              className="text-blue-500 mt-2"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? "Hide Details" : "Show Details"}
+            </button>
+          )}
+          {isPremium && isExpanded && (
+            <div className="mt-2 text-sm">
+              <p><strong>Form:</strong> Home: {suggestion.form.home}, Away: {suggestion.form.away}</p>
+              <p><strong>Head-to-Head:</strong> {suggestion.headToHead}</p>
+              <p><strong>Injuries:</strong> Home: {suggestion.injuries.home}, Away: {suggestion.injuries.away}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Calendar View Component
+    function CalendarView({ selectedDate, setSelectedDate, performance }) {
+      return (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="border p-2 rounded"
+          />
+          <div className="mt-2">
+            {performance.find((p) => p.date === selectedDate) ? (
+              <div>
+                {performance.map((p) => (
+                  p.date === selectedDate && (
+                    <div key={p.date}>
+                      <p>Wins: {p.win}, Losses: {p.loss}, Voids: {p.void}</p>
+                      <p>Profit: {p.profit.toFixed(2)}</p>
                     </div>
+                  )
+                ))}
+              </div>
+            ) : (
+              <p>Fixtures Being Analyzed for {selectedDate}</p>
+            )}
+          </div>
+        </div>
+      );
+    }
 
-                    <div className="mt-6">
-                        <h2 className="text-xl font-semibold">Favorite Leagues</h2>
-                        <div className="flex space-x-2 mt-2">
-                            {["Premier League", "Bundesliga", "La Liga"].map((league) => (
-                                <button
-                                    key={league}
-                                    className={`px-3 py-1 rounded ${favoriteLeagues.includes(league) ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-                                    onClick={() => toggleFavoriteLeague(league)}
-                                >
-                                    {league}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="mt-6">
-                        <h2 className="text-xl font-semibold">Calendar View</h2>
-                        <CalendarView
-                            selectedDate={selectedDate}
-                            setSelectedDate={setSelectedDate}
-                            performance={mockPerformance}
-                        />
-                    </div>
-
-                    <div className="mt-6">
-                        <h2 className="text-xl font-semibold">Settings</h2>
-                        <div className="mt-2">
-                            <label className="block">Notification Time:</label>
-                            <input
-                                type="time"
-                                value={notificationTime}
-                                onChange={(e) => setNotificationTime(e.target.value)}
-                                className="border p-2 rounded"
-                            />
-                            <button
-                                className="ml-2 bg-blue-500 text-white px-3 py-1 rounded"
-                                onClick={() => alert(`Notifications set for ${notificationTime}`)}
-                            >
-                                Save
-                            </button>
-                        </div>
-                        <div className="mt-2">
-                            <label className="block">Premium Subscription:</label>
-                            <button
-                                className={`px-3 py-1 rounded ${isPremium ? "bg-green-500" : "bg-blue-500"} text-white`}
-                                onClick={() => setIsPremium(!isPremium)}
-                            >
-                                {isPremium ? "Subscribed" : "Upgrade to Premium"}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="mt-6">
-                        <h2 className="text-xl font-semibold">Performance</h2>
-                        <p>Overall Success Rate: 70% (last 3 months)</p>
-                        <p>Disclaimer: Betting involves risk. Past performance is not indicative of future results.</p>
-                    </div>
-
-                    <div className="mt-6">
-                        <h2 className="text-xl font-semibold">Learn More</h2>
-                        <p className="text-sm">
-                            <a href="#" className="text-blue-500" onClick={() => alert("Explaining Double Chance: Bet on two outcomes (e.g., Home or Draw).")}>
-                                What is Double Chance?
-                            </a>
-                        </p>
-                    </div>
-                </div>
-            );
-        }
-
-        // Match Card Component
-        function MatchCard({ suggestion, isPremium }) {
-            const [isExpanded, setIsExpanded] = React.useState(false);
-
-            return (
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="flex justify-between">
-                        <div>
-                            <h3 className="font-bold">{suggestion.match}</h3>
-                            <p>{suggestion.league} | {suggestion.date} {suggestion.time}</p>
-                            <p>Bet: {suggestion.market} @ {suggestion.odds} (Confidence: {suggestion.confidence})</p>
-                            <p className="text-sm">Why? {suggestion.reasoning}</p>
-                        </div>
-                        <button
-                            className="bg-blue-500 text-white px-3 py-1 rounded"
-                            onClick={() => window.open(suggestion.betwayLink, "_blank")}
-                        >
-                            Bet Now
-                        </button>
-                    </div>
-                    {isPremium && (
-                        <button
-                            className="text-blue-500 mt-2"
-                            onClick={() => setIsExpanded(!isExpanded)}
-                        >
-                            {isExpanded ? "Hide Details" : "Show Details"}
-                        </button>
-                    )}
-                    {isPremium && isExpanded && (
-                        <div className="mt-2 text-sm">
-                            <p><strong>Form:</strong> Home: {suggestion.form.home}, Away: {suggestion.form.away}</p>
-                            <p><strong>Head-to-Head:</strong> {suggestion.headToHead}</p>
-                            <p><strong>Injuries:</strong> Home: {suggestion.injuries.home}, Away: {suggestion.injuries.away}</p>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        // Calendar View Component
-        function CalendarView({ selectedDate, setSelectedDate, performance }) {
-            return (
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="border p-2 rounded"
-                    />
-                    <div className="mt-2">
-                        {performance.find((p) => p.date === selectedDate) ? (
-                            <div>
-                                {performance.map((p) => (
-                                    p.date === selectedDate && (
-                                        <div key={p.date}>
-                                            <p>Wins: {p.win}, Losses: {p.loss}, Voids: {p.void}</p>
-                                            <p>Profit: {p.profit.toFixed(2)}</p>
-                                        </div>
-                                    )
-                                ))}
-                            </div>
-                        ) : (
-                            <p>Fixtures Being Analyzed for {selectedDate}</p>
-                        )}
-                    </div>
-                </div>
-            );
-        }
-
-        // Render the app
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
-
-
-    </script>
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
 </body>
 </html>
+
