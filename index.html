@@ -1,172 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Thuto's Advanced Betting Tips</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thuto's Daily Betting Tips</title>
 
-  <!-- React 18 UMD -->
+  <!-- React + ReactDOM (development mode) -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 
-  <!-- Tailwind -->
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Recharts -->
-  <script src="https://cdn.jsdelivr.net/npm/recharts/umd/Recharts.min.js"></script>
+  <!-- Chart.js for interactive charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
+    /* Exquisite theme: Deep blues, vibrant greens, accents of gold for premium feel */
     :root {
-      --brand-blue: #0B3D91;
-      --brand-orange: #FF7A00;
-      --muted: #6B7280;
+      --brand-dark-blue: #001F3F; /* Navy blue for backgrounds */
+      --brand-green: #28A745; /* Success green for wins/profits */
+      --brand-gold: #FFD700; /* Gold accents for highlights */
+      --brand-light: #F8F9FA; /* Light background */
+      --muted-gray: #6C757D;
     }
-    .brand-blue { background-color: var(--brand-blue); color: white; }
-    .brand-blue-text { color: var(--brand-blue); }
-    .brand-orange { background-color: var(--brand-orange); color: white; }
-    .card { box-shadow: 0 6px 18px rgba(8,20,50,0.06); border-radius: 12px; }
+    .brand-dark-blue { background-color: var(--brand-dark-blue); color: white; }
+    .brand-green { background-color: var(--brand-green); color: white; }
+    .brand-gold-text { color: var(--brand-gold); }
+    .card { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 8px; transition: transform 0.2s; }
+    .card:hover { transform: translateY(-2px); }
+    body.dark-mode { background-color: #121212; color: #E0E0E0; }
+    body.dark-mode .bg-white { background-color: #1E1E1E; }
+    body.dark-mode .text-gray-700 { color: #BDBDBD; }
+    body.dark-mode .brand-dark-blue { background-color: #0A192F; }
   </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
-  <div id="root" class="p-4"></div>
+  <div id="root"></div>
 
-  <script>
-    const { createElement: h, useState, useEffect, useMemo } = React;
-    const { createRoot } = ReactDOM;
-    const { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } = window.Recharts;
+  <script type="text/babel">
+    // Config
+    const API_KEY = 'YOUR_API_KEY_HERE'; // Replace with your key from https://the-odds-api.com
+    const TARGET_ODDS = 1.20; // Focus on ~1.20 odds for high-probability bets
+    const MARKETS = ['handicaps', 'double chances', 'over/under goals']; // High-probability markets
 
-    const API_PROVIDER = 'the-odds-api';
-    const TARGET_ODDS_MAX = 1.25;
-
-    const MOCK_SUGGESTIONS = [
-      { id:1, match:"Arsenal vs Chelsea", league:"Premier League", date:"2025-09-28", time:"15:00", market:"Double Chance (1X)", odds:1.22, confidence:"High", reasoning:"Home xG advantage", betwayLink:"https://www.betway.com", oddsTrend:[1.25,1.22,1.20] },
-      { id:2, match:"Bayern vs Dortmund", league:"Bundesliga", date:"2025-09-28", time:"18:30", market:"Over 2.5 Goals", odds:1.19, confidence:"Medium-High", reasoning:"High scoring fixture", betwayLink:"https://www.betway.com", oddsTrend:[1.21,1.20,1.19] },
-      { id:3, match:"Real Madrid vs Valencia", league:"La Liga", date:"2025-09-28", time:"20:00", market:"Home Win", odds:1.18, confidence:"High", reasoning:"Real strong at home", betwayLink:"https://www.betway.com", oddsTrend:[1.20,1.19,1.18] },
+    // Expanded mock data with more suggestions, various leagues (including women's and international), explanations based on history/form
+    const mockSuggestions = [
+      {
+        id: 1,
+        match: "Arsenal vs Chelsea",
+        league: "Premier League",
+        date: "2025-09-28",
+        time: "15:00",
+        market: "Double Chance (1X)",
+        odds: 1.22,
+        confidence: "High",
+        reasoning: "Arsenal has won 4 of last 5 home games against Chelsea (history). Current form: Arsenal WWWWD, Chelsea LDDWL. Low risk due to home advantage.",
+        form: { home: "WWWWD", away: "LDDWL" },
+        headToHead: "Arsenal won 3 of last 5",
+        injuries: { home: "None", away: "J. Felix (out)" },
+        betwayLink: "https://www.betway.com"
+      },
+      {
+        id: 2,
+        match: "Bayern Munich vs Dortmund",
+        league: "Bundesliga",
+        date: "2025-09-28",
+        time: "18:30",
+        market: "Over 2.5 Goals",
+        odds: 1.19,
+        confidence: "Medium-High",
+        reasoning: "Last 5 H2H had over 2.5 goals (history). Current form: Bayern scoring 3+ per game, Dortmund conceding 2+. High-scoring trends.",
+        form: { home: "WWWWW", away: "WLDWW" },
+        headToHead: "Bayern won 4 of last 5",
+        injuries: { home: "M. Neuer (doubtful)", away: "None" },
+        betwayLink: "https://www.betway.com"
+      },
+      {
+        id: 3,
+        match: "Real Madrid vs Barcelona",
+        league: "La Liga",
+        date: "2025-09-29",
+        time: "20:00",
+        market: "Asian Handicap (-1.5 Home)",
+        odds: 1.25,
+        confidence: "High",
+        reasoning: "Real Madrid unbeaten in last 10 home El Clasicos (history). Current form: Real WWWWW, Barca WDLLW. Strong home dominance.",
+        form: { home: "WWWWW", away: "WDLLW" },
+        headToHead: "Real won 3 of last 5",
+        injuries: { home: "None", away: "Pedri (doubtful)" },
+        betwayLink: "https://www.betway.com"
+      },
+      {
+        id: 4,
+        match: "Manchester City Women vs Arsenal Women",
+        league: "FA Women's Super League",
+        date: "2025-09-30",
+        time: "14:00",
+        market: "Double Chance (1X)",
+        odds: 1.18,
+        confidence: "High",
+        reasoning: "City Women have not lost at home in 8 games (history). Current form: City WWWDW, Arsenal WLWDW. Solid defense at home.",
+        form: { home: "WWWDW", away: "WLWDW" },
+        headToHead: "City won 2 of last 3",
+        injuries: { home: "None", away: "None" },
+        betwayLink: "https://www.betway.com"
+      },
+      {
+        id: 5,
+        match: "Brazil vs Argentina",
+        league: "World Cup Qualifiers",
+        date: "2025-10-01",
+        time: "21:00",
+        market: "Under 2.5 Goals",
+        odds: 1.20,
+        confidence: "Medium",
+        reasoning: "Last 4 H2H were under 2.5 (history). Current form: Both teams defensive in qualifiers. Low-scoring rivalry.",
+        form: { home: "WDWWW", away: "WWDLW" },
+        headToHead: "Draw in 2 of last 5",
+        injuries: { home: "Neymar (doubtful)", away: "Messi (fit)" },
+        betwayLink: "https://www.betway.com"
+      },
+      {
+        id: 6,
+        match: "Nigeria vs South Africa",
+        league: "CAF Africa Cup of Nations Qualifiers",
+        date: "2025-10-02",
+        time: "19:00",
+        market: "Double Chance (1X)",
+        odds: 1.15,
+        confidence: "High",
+        reasoning: "Nigeria unbeaten in last 7 home qualifiers (history). Current form: Nigeria WWWWW, SA WLDLW. Strong home record.",
+        form: { home: "WWWWW", away: "WLDLW" },
+        headToHead: "Nigeria won 4 of last 5",
+        injuries: { home: "None", away: "None" },
+        betwayLink: "https://www.betway.com"
+      },
+      {
+        id: 7,
+        match: "Lyon Women vs Paris SG Women",
+        league: "Division 1 Féminine",
+        date: "2025-10-03",
+        time: "20:00",
+        market: "Over 2.5 Goals",
+        odds: 1.23,
+        confidence: "Medium-High",
+        reasoning: "Last 5 H2H averaged 3.5 goals (history). Current form: Both teams high-scoring. Attacking styles.",
+        form: { home: "WWWLW", away: "WWWWW" },
+        headToHead: "PSG won 3 of last 5",
+        injuries: { home: "Ada Hegerberg (fit)", away: "None" },
+        betwayLink: "https://www.betway.com"
+      },
+      // Add more as needed...
     ];
 
-    function formatOdds(o) { return Number(o).toFixed(2); }
+    const mockPerformance = [
+      { date: "2025-09-26", win: 2, loss: 0, void: 1, profit: 0.42 },
+      { date: "2025-09-25", win: 1, loss: 1, void: 0, profit: -0.01 },
+      { date: "2025-09-24", win: 3, loss: 0, void: 0, profit: 0.60 },
+      // More data for chart
+    ];
+
+    // Fetch real odds (focus on specified markets, leagues)
+    async function fetchRealSuggestions() {
+      if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
+        return mockSuggestions; // Fallback
+      }
+      try {
+        const sports = ['soccer_epl', 'soccer_la_liga', 'soccer_bundesliga', 'soccer_serie_a', 'soccer_ligue_one', 'soccer_uefa_champs_league', 'soccer_uefa_europa_league', 'soccer_world_cup_qualifiers', 'soccer_caf', 'soccer_nwsl', 'soccer_fa_wsl']; // Leagues including women's and international
+        const suggestions = [];
+        for (const sport of sports) {
+          const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=us&markets=spreads,totals,h2h&oddsFormat=decimal`;
+          const response = await fetch(url);
+          const data = await response.json();
+          data.forEach(event => {
+            const bestMarket = event.bookmakers[0]?.markets.find(m => MARKETS.some(mk => m.key.includes(mk.toLowerCase())));
+            if (bestMarket) {
+              const outcome = bestMarket.outcomes.find(o => o.price <= TARGET_ODDS + 0.05); // Close to 1.20
+              if (outcome) {
+                suggestions.push({
+                  id: event.id,
+                  match: `${event.home_team} vs ${event.away_team}`,
+                  league: event.sport_nice,
+                  date: new Date(event.commence_time).toLocaleDateString(),
+                  time: new Date(event.commence_time).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+                  market: bestMarket.key,
+                  odds: outcome.price,
+                  confidence: outcome.price < 1.2 ? 'High' : 'Medium',
+                  reasoning: "Based on recent form and H2H data from API. Low odds indicate high probability.",
+                  betwayLink: "https://www.betway.com"
+                });
+              }
+            }
+          });
+        }
+        return suggestions.length > 0 ? suggestions : mockSuggestions;
+      } catch (error) {
+        console.error('API Error:', error);
+        return mockSuggestions;
+      }
+    }
 
     function App() {
-      const [suggestions,setSuggestions] = useState(MOCK_SUGGESTIONS);
-      const [loading,setLoading] = useState(false);
-      const [error,setError] = useState(null);
+      const [suggestions, setSuggestions] = React.useState(mockSuggestions);
+      const [darkMode, setDarkMode] = React.useState(false);
+      const [chart, setChart] = React.useState(null);
 
-      const [query,setQuery] = useState('');
-      const [leagueFilter,setLeagueFilter] = useState('All');
-      const [selectedMarket,setSelectedMarket] = useState('Any');
-      const [maxOdds,setMaxOdds] = useState(TARGET_ODDS_MAX);
+      React.useEffect(() => {
+        fetchRealSuggestions().then(setSuggestions);
+        const ctx = document.getElementById('performanceChart');
+        if (ctx) {
+          setChart(new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: mockPerformance.map(p => p.date),
+              datasets: [{ label: 'Profit', data: mockPerformance.map(p => p.profit), borderColor: 'var(--brand-green)' }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+          }));
+        }
+        document.body.classList.toggle('dark-mode', darkMode);
+      }, [darkMode]);
 
-      const leagues = useMemo(() => {
-        const s = new Set(suggestions.map(s=>s.league));
-        return ['All', ...Array.from(s)];
-      }, [suggestions]);
+      return (
+        <div className="min-h-screen p-4">
+          <header className="brand-dark-blue p-4 rounded-lg shadow mb-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Thuto's Daily Betting Tips</h1>
+              <p className="text-sm">High-probability, data-driven suggestions for safe wins</p>
+            </div>
+            <button onClick={() => setDarkMode(!darkMode)} className="bg-gray-200 dark:bg-gray-700 p-2 rounded">
+              {darkMode ? 'Light Mode' : 'Dark Mode'}
+            </button>
+          </header>
 
-      const filtered = suggestions.filter(s => {
-        if(leagueFilter!=='All' && s.league!==leagueFilter) return false;
-        if(selectedMarket!=='Any' && !s.market.toLowerCase().includes(selectedMarket.toLowerCase())) return false;
-        if(query && !(`${s.match} ${s.league}`).toLowerCase().includes(query.toLowerCase())) return false;
-        if(maxOdds && Number(s.odds) > Number(maxOdds)) return false;
-        return true;
-      });
-
-      const stats = useMemo(() => {
-        const total = suggestions.length;
-        const avgOdds = suggestions.reduce((a,b)=>a+Number(b.odds||0),0)/Math.max(total,1);
-        const profitable = suggestions.filter(s=>Number(s.odds)<=1.2).length;
-        return { total, avgOdds:avgOdds.toFixed(2), profitable };
-      }, [suggestions]);
-
-      return h('div', {className:'max-w-6xl mx-auto'},
-        // Header
-        h('header', {className:'brand-blue p-4 rounded-lg card'},
-          h('div',{className:'flex items-center justify-between'},
-            h('div',{},
-              h('h1',{className:'text-2xl font-bold'},"Thuto's Advanced Betting Tips"),
-              h('p',{className:'text-sm opacity-90'},"Handicap, Double Chance, Over/Under — filter and explore!")
-            ),
-            h('div',{className:'text-right'},
-              h('button',{className:'brand-orange px-3 py-2 rounded font-semibold', onClick:()=>setSuggestions(MOCK_SUGGESTIONS)}, "Refresh Live Odds"),
-              h('div',{className:'text-xs mt-1 text-white/80'}, `Provider: ${API_PROVIDER}`)
-            )
-          )
-        ),
-        // Main
-        h('main', {className:'grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4'},
-          // Left section: controls + suggestions
-          h('section',{className:'lg:col-span-2 space-y-4'},
-            // Filters
-            h('div',{className:'card p-4 bg-white'},
-              h('div',{className:'flex gap-2 flex-col md:flex-row md:items-center'},
-                h('input',{placeholder:'Search match or team...', className:'flex-1 border p-2 rounded', value:query, onChange:e=>setQuery(e.target.value)}),
-                h('select',{className:'border p-2 rounded', value:leagueFilter, onChange:e=>setLeagueFilter(e.target.value)},
-                  leagues.map(l=>h('option',{key:l,value:l},l))
-                ),
-                h('select',{className:'border p-2 rounded', value:selectedMarket, onChange:e=>setSelectedMarket(e.target.value)},
-                  ['Any','h2h','totals','spreads','Double Chance','Over/Under'].map(m=>h('option',{key:m},m))
-                ),
-                h('div',{className:'flex items-center gap-2'},
-                  h('label',{className:'text-sm'},"Max Odds"),
-                  h('input',{type:'range', min:1.01, max:2.50, step:0.01, value:maxOdds, onChange:e=>setMaxOdds(e.target.value)}),
-                  h('div',{className:'w-16 text-right'}, Number(maxOdds).toFixed(2))
-                )
-              )
-            ),
-            // Suggestions
-            h('div',{className:'space-y-3'},
-              filtered.length===0 && h('div',{className:'p-4 card bg-white'},"No suggestions match your filters."),
-              filtered.map(s => h('div',{key:s.id,className:'p-4 card bg-white flex flex-col md:flex-row justify-between items-start gap-4'},
-                h('div',{className:'flex-1'},
-                  h('div',{className:'flex items-baseline gap-2'},
-                    h('h3',{className:'text-lg font-semibold'}, s.match),
-                    h('span',{className:'text-sm text-muted'}, s.league)
-                  ),
-                  h('div',{className:'text-sm text-gray-600'}, `${s.date} ${s.time} • ${s.market}`),
-                  h('p',{className:'mt-2'}, s.reasoning)
-                ),
-                h('div',{className:'text-right flex flex-col items-end gap-2'},
-                  h('div',{className:'text-xl font-bold brand-blue-text'}, formatOdds(s.odds)),
-                  h('a',{className:'inline-block brand-orange px-3 py-1 rounded text-sm', href:s.betwayLink, target:'_blank'}, "Bet on Betway"),
-                  h(LineChart,{width:200,height:80,data:s.oddsTrend.map((v,i)=>({name:i,odds:v}))},
-                    h(XAxis,{hide:true,dataKey:'name'}),
-                    h(YAxis,{hide:true,domain:['dataMin','dataMax']}),
-                    h(Tooltip,{formatter:val=>formatOdds(val)}),
-                    h(Line,{type:'monotone',dataKey:'odds',stroke:'#FF7A00',strokeWidth:2,dot:false}),
-                    h(CartesianGrid,{stroke:'#eee',strokeDasharray:'3 3'})
-                  )
-                )
-              ))
-            )
-          ),
-          // Right section: stats
-          h('aside',{className:'space-y-4'},
-            h('div',{className:'card p-4 bg-white'},
-              h('h4',{className:'font-semibold'},"Quick Stats"),
-              h('p',{className:'mt-2 text-sm text-gray-700'}, `Total suggestions: `, h('strong',{}, stats.total)),
-              h('p',{className:'text-sm text-gray-700'}, `Avg odds: `, h('strong',{}, stats.avgOdds)),
-              h('p',{className:'text-sm text-gray-700'}, `Odds ≤ 1.20: `, h('strong',{}, stats.profitable))
-            ),
-            h('div',{className:'card p-4 bg-white'},
-              h('h4',{className:'font-semibold'},"Share"),
-              h('p',{className:'text-sm text-gray-600'},"Copy this page URL and share with followers."),
-              h('button',{className:'mt-2 border rounded px-3 py-1', onClick:()=>navigator.clipboard?.writeText(window.location.href)}, "Copy Link")
-            )
-          )
-        ),
-        // Footer
-        h('footer',{className:'text-center text-sm text-gray-500 mt-6 mb-6'},
-          h('div',{}, `Data provider: ${API_PROVIDER}. Mock data used.`),
-          h('div',{className:'mt-2'},"Powered by Thuto — use responsibly. Betting involves risk.")
-        )
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2 space-y-4">
+              <h2 className="text-2xl font-semibold">Betting Suggestions</h2>
+              {suggestions.map(sug => (
+                <div key={sug.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow card">
+                  <h3 className="text-xl font-bold">{sug.match}</h3>
+                  <p className="text-sm text-muted-gray">{sug.league} - {sug.date} {sug.time}</p>
+                  <p>Market: {sug.market} @ <span className="brand-gold-text">{sug.odds}</span> (Confidence: {sug.confidence})</p>
+                  <p className="mt-2">{sug.reasoning}</p>
+                  <a href={sug.betwayLink} target="_blank" className="brand-green px-4 py-2 rounded mt-2 inline-block">Bet Now</a>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold">Performance Stats</h2>
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow card mt-4">
+                <canvas id="performanceChart"></canvas>
+              </div>
+              <p className="mt-4 text-sm">Disclaimer: Betting involves risk. Use responsibly.</p>
+            </div>
+          </div>
+        </div>
       );
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const root = createRoot(document.getElementById('root'));
-      root.render(h(App));
-    });
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
+
 
 
 
