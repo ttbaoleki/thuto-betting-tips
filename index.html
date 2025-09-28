@@ -6,17 +6,17 @@
   <title>Thuto's Daily Betting Tips - Betway Botswana</title>
 
   <!-- React + ReactDOM -->
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin defer></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin defer></script>
 
   <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone@7.22.9/babel.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.9/babel.min.js" crossorigin defer></script>
 
   <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 
   <style>
     :root {
@@ -51,7 +51,7 @@
     .loading { text-align: center; padding: 20px; font-size: 1.2rem; }
     @media (max-width: 640px) {
       .standings-table th, .standings-table td { font-size: 0.75rem; padding: 8px; }
-      .brand-green { padding: 10px; font-size: 0.9rem; }
+      .brand-green { padding: 12px 24px; font-size: 1rem; }
     }
   </style>
 </head>
@@ -60,12 +60,66 @@
   <div id="root"></div>
 
   <script type="text/babel" defer>
+    console.log('Script starting...');
+
     // Config
     const API_KEY = 'YOUR_API_KEY_HERE'; // Get from https://the-odds-api.com
     const TARGET_ODDS = 1.20;
     const BOTSWANA_TZ_OFFSET = 2 * 3600000; // CAT (UTC+2)
     const BETWAY_BW_BASE = 'https://betway.co.bw/en/sports/football';
     const MARKETS = ['h2h', 'totals', 'spreads'];
+
+    // Mock standings (Sep 28, 2025)
+    const mockStandings = {
+      "Premier League": [
+        { team: "Liverpool", played: 5, won: 5, drawn: 0, lost: 0, gf: 11, ga: 5, gd: 6, pts: 15, homeForm: "W-W-W", homeWinRate: 100 },
+        { team: "Arsenal", played: 5, won: 3, drawn: 1, lost: 1, gf: 10, ga: 2, gd: 8, pts: 10, homeForm: "W-D-W", homeWinRate: 75 },
+        { team: "Burnley", played: 5, won: 1, drawn: 1, lost: 3, gf: 5, ga: 8, gd: -3, pts: 4, homeForm: "L-W-D", homeWinRate: 40 },
+        { team: "Tottenham", played: 5, won: 3, drawn: 1, lost: 1, gf: 10, ga: 3, gd: 7, pts: 10, homeForm: "W-W-D", homeWinRate: 70 },
+        { team: "Bournemouth", played: 5, won: 3, drawn: 1, lost: 1, gf: 6, ga: 5, gd: 1, pts: 10, homeForm: "W-D-W", homeWinRate: 70 },
+        { team: "Crystal Palace", played: 5, won: 2, drawn: 3, lost: 0, gf: 6, ga: 2, gd: 4, pts: 9, homeForm: "W-D-D", homeWinRate: 50 },
+        { team: "Chelsea", played: 5, won: 2, drawn: 2, lost: 1, gf: 10, ga: 5, gd: 5, pts: 8, homeForm: "W-D-L", homeWinRate: 50 },
+        { team: "Sunderland", played: 5, won: 2, drawn: 2, lost: 1, gf: 6, ga: 4, gd: 2, pts: 8, homeForm: "W-D-W", homeWinRate: 70 },
+        { team: "Fulham", played: 5, won: 2, drawn: 2, lost: 1, gf: 6, ga: 5, gd: 1, pts: 8, homeForm: "W-D-W", homeWinRate: 70 },
+        { team: "Man City", played: 5, won: 2, drawn: 1, lost: 2, gf: 9, ga: 5, gd: 4, pts: 7, homeForm: "W-L-D", homeWinRate: 50 },
+        { team: "Everton", played: 5, won: 2, drawn: 1, lost: 2, gf: 6, ga: 5, gd: 1, pts: 7, homeForm: "W-L-D", homeWinRate: 50 },
+        { team: "Man United", played: 5, won: 2, drawn: 1, lost: 2, gf: 6, ga: 8, gd: -2, pts: 7, homeForm: "W-L-W", homeWinRate: 60 },
+        { team: "Leeds", played: 5, won: 2, drawn: 1, lost: 2, gf: 4, ga: 7, gd: -3, pts: 7, homeForm: "D-W-L", homeWinRate: 50 },
+        { team: "Newcastle", played: 5, won: 1, drawn: 3, lost: 1, gf: 3, ga: 3, gd: 0, pts: 6, homeForm: "D-D-W", homeWinRate: 50 },
+        { team: "Aston Villa", played: 5, won: 1, drawn: 2, lost: 2, gf: 5, ga: 7, gd: -2, pts: 5, homeForm: "D-L-D", homeWinRate: 40 },
+        { team: "Brighton", played: 5, won: 1, drawn: 2, lost: 2, gf: 4, ga: 6, gd: -2, pts: 5, homeForm: "L-D-W", homeWinRate: 40 },
+        { team: "West Ham", played: 5, won: 1, drawn: 2, lost: 2, gf: 4, ga: 7, gd: -3, pts: 5, homeForm: "L-D-W", homeWinRate: 40 },
+        { team: "Ipswich", played: 5, won: 1, drawn: 1, lost: 3, gf: 3, ga: 8, gd: -5, pts: 4, homeForm: "L-W-D", homeWinRate: 40 },
+        { team: "Wolves", played: 5, won: 1, drawn: 1, lost: 3, gf: 4, ga: 9, gd: -5, pts: 4, homeForm: "L-D-W", homeWinRate: 40 },
+        { team: "Leicester", played: 5, won: 0, drawn: 2, lost: 3, gf: 3, ga: 9, gd: -6, pts: 2, homeForm: "L-D-L", homeWinRate: 20 },
+      ],
+      "English Championship": [
+        { team: "Middlesbrough", played: 6, won: 5, drawn: 1, lost: 0, gf: 14, ga: 5, gd: 9, pts: 16, homeForm: "W-W-D", homeWinRate: 80 },
+        { team: "Coventry City", played: 6, won: 4, drawn: 2, lost: 0, gf: 12, ga: 4, gd: 8, pts: 14, homeForm: "W-D-W", homeWinRate: 75 },
+        { team: "Sheffield Wednesday", played: 6, won: 4, drawn: 1, lost: 1, gf: 11, ga: 5, gd: 6, pts: 13, homeForm: "W-D-L", homeWinRate: 70 },
+        { team: "Bristol City", played: 6, won: 3, drawn: 2, lost: 1, gf: 10, ga: 6, gd: 4, pts: 11, homeForm: "W-D-L", homeWinRate: 65 },
+      ],
+      "Carabao Cup": [
+        { team: "Man City", played: 2, won: 2, drawn: 0, lost: 0, gf: 5, ga: 1, gd: 4, pts: 6, homeForm: "W", homeWinRate: 100 },
+        { team: "Swansea City", played: 2, won: 1, drawn: 1, lost: 0, gf: 3, ga: 2, gd: 1, pts: 4, homeForm: "W", homeWinRate: 100 },
+      ],
+      "FA Cup": [
+        { team: "Aveley", played: 1, won: 1, drawn: 0, lost: 0, gf: 2, ga: 1, gd: 1, pts: 3, homeForm: "W", homeWinRate: 100 },
+      ]
+    };
+
+    // Mock fixtures (Sep 29, 2025 + sample future dates)
+    const mockSuggestions = [
+      { id: 1, match: "Aston Villa vs Wolves", league: "Premier League", date: "2025-09-29", time: "17:00 CAT", market: "Double Chance (1X)", odds: 1.12, confidence: "High", reasoning: "Villa home form (D-L-D, 0/3 home wins but solid draws). Favor home. H2H: Tight.", form: { home: "D-L-D", away: "L-D-W", gf: 1.1 }, headToHead: "Villa won 2/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: "89%", score: 0.85 },
+      { id: 2, match: "Brentford vs Burnley", league: "Premier League", date: "2025-09-29", time: "17:00 CAT", market: "Over 0.5 Goals", odds: 1.10, confidence: "High", reasoning: "Brentford scores in 8/10 home (W-L-D, GF 1.5/home). Regular scorers. H2H: New matchup.", form: { home: "W-L-D", away: "L-W-D", gf: 1.5 }, headToHead: "First meeting", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: "91%", score: 0.90 },
+      { id: 3, match: "Chelsea vs Arsenal", league: "Premier League", date: "2025-09-29", time: "20:00 CAT", market: "Double Chance (1X)", odds: 1.20, confidence: "High", reasoning: "Chelsea home form (W-D-L, 2/3 home wins). Favor home. H2H: Chelsea 2/5.", form: { home: "W-D-L", away: "W-D-W", gf: 1.8 }, headToHead: "Chelsea won 2/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: "83%", score: 0.80 },
+      { id: 4, match: "Sheffield Wednesday vs Coventry", league: "English Championship", date: "2025-09-29", time: "09:30 CAT", market: "Double Chance (1X)", odds: 1.15, confidence: "High", reasoning: "Sheffield Wednesday home form (W-D-L, 2/3 home wins). Favor home. H2H: Sheffield 3/5.", form: { home: "W-D-L", away: "D-W-D", gf: 1.4 }, headToHead: "Sheffield won 3/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-championship`, winProb: "87%", score: 0.85 },
+      { id: 5, match: "Bristol City vs QPR", league: "English Championship", date: "2025-09-29", time: "12:00 CAT", market: "Over 0.5 Goals", odds: 1.08, confidence: "High", reasoning: "Bristol City scores in 7/10 home (W-D-L, GF 1.3/home). Regular scorers. H2H: Bristol 2/5.", form: { home: "W-D-L", away: "L-D-W", gf: 1.3 }, headToHead: "Bristol won 2/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-championship`, winProb: "93%", score: 0.90 },
+      { id: 6, match: "Swansea vs Man City", league: "Carabao Cup", date: "2025-09-29", time: "20:00 CAT", market: "Double Chance (1X)", odds: 1.05, confidence: "Very High", reasoning: "Swansea home form (W-D-L, 2/3 home wins). Favor home. H2H: Cup upset potential.", form: { home: "W-D-L", away: "W-W-W", gf: 1.2 }, headToHead: "First meeting", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-league-cup`, winProb: "95%", score: 0.92 },
+      { id: 7, match: "Aveley vs Halesowen Town", league: "FA Cup", date: "2025-09-29", time: "21:45 CAT", market: "Double Chance (1X)", odds: 1.12, confidence: "High", reasoning: "Aveley home form (W-D-L, 2/3 home wins). Favor home. H2H: Qualifying round.", form: { home: "W-D-L", away: "L-D-W", gf: 1.4 }, headToHead: "First meeting", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-fa-cup`, winProb: "89%", score: 0.85 },
+      // Sample future date for testing
+      { id: 8, match: "Liverpool vs Leicester", league: "Premier League", date: "2025-09-30", time: "15:00 CAT", market: "Double Chance (1X)", odds: 1.05, confidence: "Very High", reasoning: "Liverpool 100% home win rate. Favor home.", form: { home: "W-W-W", away: "L-D-L", gf: 2.2 }, headToHead: "Liverpool won 4/5", injuries: { home: "None", away: "Vardy out" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: "95%", score: 0.95 }
+    ];
 
     // Cache management
     function getCachedData(key, maxAge = 3600000) {
@@ -90,41 +144,6 @@
       }
     }
 
-    // Standings (Sep 28, 2025)
-    const mockStandings = {
-      "Premier League": [
-        { team: "Liverpool", played: 5, won: 5, drawn: 0, lost: 0, gf: 11, ga: 5, gd: 6, pts: 15, homeForm: "W-W-W", homeWinRate: 100 },
-        { team: "Arsenal", played: 5, won: 3, drawn: 1, lost: 1, gf: 10, ga: 2, gd: 8, pts: 10, homeForm: "W-D-W", homeWinRate: 75 },
-        { team: "Burnley", played: 5, won: 1, drawn: 1, lost: 3, gf: 5, ga: 8, gd: -3, pts: 4, homeForm: "L-W-D", homeWinRate: 40 },
-        // ... (full table abbreviated)
-      ],
-      "English Championship": [
-        { team: "Middlesbrough", played: 6, won: 5, drawn: 1, lost: 0, gf: 14, ga: 5, gd: 9, pts: 16, homeForm: "W-W-D", homeWinRate: 80 },
-        { team: "Coventry City", played: 6, won: 4, drawn: 2, lost: 0, gf: 12, ga: 4, gd: 8, pts: 14, homeForm: "W-D-W", homeWinRate: 75 },
-        // ... (full table abbreviated)
-      ],
-      "Carabao Cup": [
-        { team: "Man City", played: 2, won: 2, drawn: 0, lost: 0, gf: 5, ga: 1, gd: 4, pts: 6, homeForm: "W", homeWinRate: 100 },
-        { team: "Swansea City", played: 2, won: 1, drawn: 1, lost: 0, gf: 3, ga: 2, gd: 1, pts: 4, homeForm: "W", homeWinRate: 100 },
-        // ... (full round)
-      ],
-      "FA Cup": [
-        { team: "Aveley", played: 1, won: 1, drawn: 0, lost: 0, gf: 2, ga: 1, gd: 1, pts: 3, homeForm: "W", homeWinRate: 100 },
-        // ... (qualifying round)
-      ]
-    };
-
-    // Fixtures for Sep 29, 2025
-    const mockSuggestions = [
-      { id: 1, match: "Aston Villa vs Wolves", league: "Premier League", date: "2025-09-29", time: "17:00 CAT", market: "Double Chance (1X)", odds: 1.12, confidence: "High", reasoning: "Villa home form (D-L-D, 0/3 home wins but solid draws). Favor home. H2H: Tight.", form: { home: "D-L-D", away: "L-D-W", gf: 1.1 }, headToHead: "Villa won 2/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: "89%", score: 0.85 },
-      { id: 2, match: "Brentford vs Burnley", league: "Premier League", date: "2025-09-29", time: "17:00 CAT", market: "Over 0.5 Goals", odds: 1.10, confidence: "High", reasoning: "Brentford scores in 8/10 home (W-L-D, GF 1.5/home). Regular scorers. H2H: New matchup.", form: { home: "W-L-D", away: "L-W-D", gf: 1.5 }, headToHead: "First meeting", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: "91%", score: 0.90 },
-      { id: 3, match: "Chelsea vs Arsenal", league: "Premier League", date: "2025-09-29", time: "20:00 CAT", market: "Double Chance (1X)", odds: 1.20, confidence: "High", reasoning: "Chelsea home form (W-D-L, 2/3 home wins). Favor home. H2H: Chelsea 2/5.", form: { home: "W-D-L", away: "W-D-W", gf: 1.8 }, headToHead: "Chelsea won 2/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: "83%", score: 0.80 },
-      { id: 4, match: "Sheffield Wednesday vs Coventry", league: "English Championship", date: "2025-09-29", time: "9:30 CAT", market: "Double Chance (1X)", odds: 1.15, confidence: "High", reasoning: "Sheffield Wednesday home form (W-D-L, 2/3 home wins). Favor home. H2H: Sheffield 3/5.", form: { home: "W-D-L", away: "D-W-D", gf: 1.4 }, headToHead: "Sheffield won 3/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-championship`, winProb: "87%", score: 0.85 },
-      { id: 5, match: "Bristol City vs QPR", league: "English Championship", date: "2025-09-29", time: "12:00 CAT", market: "Over 0.5 Goals", odds: 1.08, confidence: "High", reasoning: "Bristol City scores in 7/10 home (W-D-L, GF 1.3/home). Regular scorers. H2H: Bristol 2/5.", form: { home: "W-D-L", away: "L-D-W", gf: 1.3 }, headToHead: "Bristol won 2/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-championship`, winProb: "93%", score: 0.90 },
-      { id: 6, match: "Swansea vs Man City", league: "Carabao Cup", date: "2025-09-29", time: "20:00 CAT", market: "Double Chance (1X)", odds: 1.05, confidence: "Very High", reasoning: "Swansea home form (W-D-L, 2/3 home wins). Favor home. H2H: Cup upset potential.", form: { home: "W-D-L", away: "W-W-W", gf: 1.2 }, headToHead: "First meeting", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-league-cup`, winProb: "95%", score: 0.92 },
-      { id: 7, match: "Aveley vs Halesowen Town", league: "FA Cup", date: "2025-09-29", time: "21:45 CAT", market: "Double Chance (1X)", odds: 1.12, confidence: "High", reasoning: "Aveley home form (W-D-L, 2/3 home wins). Favor home. H2H: Qualifying round.", form: { home: "W-D-L", away: "L-D-W", gf: 1.4 }, headToHead: "First meeting", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-fa-cup`, winProb: "89%", score: 0.85 }
-    ];
-
     // Calculate bet score
     function calculateBetScore(suggestion, standings) {
       try {
@@ -142,7 +161,7 @@
     }
 
     // Generate slips
-    function generateSlips(suggestions, standings, numSlips = 30) {
+    function generateSlips(suggestions, standings, numSlips = 10) {
       try {
         const homeFavored = suggestions
           .map(s => ({ ...s, score: calculateBetScore(s, standings) }))
@@ -150,7 +169,7 @@
           .sort((a, b) => b.score - a.score);
         const slips = [];
         for (let i = 0; i < numSlips; i++) {
-          const numLegs = Math.floor(Math.random() * 9) + 2;
+          const numLegs = Math.floor(Math.random() * 4) + 2;
           const legs = homeFavored.slice(0, numLegs);
           const totalOdds = legs.reduce((acc, leg) => acc * leg.odds, 1).toFixed(2);
           const totalProb = (legs.reduce((acc, leg) => acc * parseFloat(leg.winProb) / 100, 1) * 100).toFixed(0) + "%";
@@ -171,44 +190,66 @@
       }
     }
 
+    // Fallback suggestions
+    function getFallbackSuggestions(standings) {
+      return standings["Premier League"]
+        .filter(t => t.homeWinRate > 70)
+        .map(t => ({
+          id: `fallback-${t.team}`,
+          match: `${t.team} vs TBD`,
+          league: "Premier League",
+          date: "Upcoming",
+          time: "TBD",
+          market: "Double Chance (1X)",
+          odds: 1.15,
+          confidence: "Medium",
+          reasoning: `Based on ${t.team}'s ${t.homeWinRate}% home win rate.`,
+          form: { home: t.homeForm, away: "N/A", gf: t.gf / t.played },
+          headToHead: "N/A",
+          injuries: { home: "N/A", away: "N/A" },
+          betwayLink: `${BETWAY_BW_BASE}/england-premier-league`,
+          winProb: "80%",
+          score: 0.75
+        }))
+        .slice(0, 5);
+    }
+
     // Fetch real-time odds
-    async function fetchRealSuggestions(selectedDate) {
-      const cacheKey = `odds_${selectedDate}`;
+    async function fetchRealSuggestions() {
+      const cacheKey = 'odds_week';
       const cached = getCachedData(cacheKey);
       if (cached) {
-        console.log('Using cached data for:', selectedDate);
+        console.log('Using cached data');
         return cached;
       }
-
       if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
         console.warn('No API key. Using mock data.');
-        return mockSuggestions.filter(s => s.date === selectedDate);
+        return mockSuggestions;
       }
-
       try {
-        const sports = ['soccer_epl', 'soccer_la_liga', 'soccer_bundesliga', 'soccer_serie_a', 'soccer_ligue_one', 'soccer_psl', 'soccer_caf', 'soccer_fa_wsl', 'soccer_nwsl', 'soccer_efl_championship', 'soccer_efl_cup', 'soccer_fa_cup'];
+        const sports = ['soccer_epl', 'soccer_efl_championship', 'soccer_efl_cup', 'soccer_fa_cup'];
         const suggestions = [];
         for (const sport of sports) {
           const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=uk&markets=${MARKETS.join(',')}&oddsFormat=decimal`;
           const response = await fetch(url);
           const data = await response.json();
           data.forEach(event => {
-            if (new Date(event.commence_time).toDateString() === new Date(selectedDate).toDateString()) {
+            const catTime = new Date(new Date(event.commence_time).getTime() + BOTSWANA_TZ_OFFSET);
+            if (new Date(catTime) >= new Date('2025-09-28') && new Date(catTime) <= new Date('2025-10-04')) {
               const bestMarket = event.bookmakers?.find(b => b.key === 'betway')?.markets?.find(m => MARKETS.includes(m.key));
               if (bestMarket) {
                 const outcome = bestMarket.outcomes?.find(o => o.price <= TARGET_ODDS + 0.05);
                 if (outcome) {
-                  const catTime = new Date(new Date(event.commence_time).getTime() + BOTSWANA_TZ_OFFSET);
                   suggestions.push({
                     id: event.id,
                     match: `${event.home_team} vs ${event.away_team}`,
                     league: event.sport_nice || 'Unknown',
-                    date: catTime.toLocaleDateString(),
+                    date: catTime.toISOString().split('T')[0],
                     time: catTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " CAT",
                     market: `${bestMarket.key} (${outcome.name})`,
                     odds: outcome.price.toFixed(2),
                     confidence: outcome.price < 1.10 ? 'Very High' : 'High',
-                    reasoning: `Live Betway BW odds. Low price = high prob. Updated: ${new Date(event.last_update).toLocaleTimeString()}`,
+                    reasoning: `Live Betway BW odds. Updated: ${new Date(event.last_update).toLocaleTimeString()}`,
                     form: { home: "N/A", away: "N/A", gf: "N/A" },
                     headToHead: "N/A",
                     injuries: { home: "N/A", away: "N/A" },
@@ -223,10 +264,10 @@
         }
         setCachedData(cacheKey, suggestions);
         console.log('Fetched suggestions:', suggestions);
-        return suggestions.length >= 7 ? suggestions.slice(0, 40) : mockSuggestions.filter(s => s.date === selectedDate);
+        return suggestions.length ? suggestions : mockSuggestions;
       } catch (error) {
         console.error('API Error:', error);
-        return mockSuggestions.filter(s => s.date === selectedDate);
+        return mockSuggestions;
       }
     }
 
@@ -252,12 +293,14 @@
       const [loading, setLoading] = React.useState(true);
       const [darkMode, setDarkMode] = React.useState(false);
       const [selectedDate, setSelectedDate] = React.useState('2025-09-29');
-      const [sortConfig, setSortConfig] = React.useState({ key: 'pts', direction: 'desc' });
+      const [selectedLeague, setSelectedLeague] = React.useState('All');
+      const validDates = [...new Set(mockSuggestions.map(s => s.date))];
 
       React.useEffect(() => {
         console.log('Fetching data for:', selectedDate);
-        fetchRealSuggestions(selectedDate).then(data => {
-          setSuggestions(data);
+        fetchRealSuggestions().then(data => {
+          const filtered = data.filter(s => s.date === selectedDate);
+          setSuggestions(filtered.length ? filtered : getFallbackSuggestions(standings));
           setSlips(generateSlips(data, standings));
           setLoading(false);
           console.log('Data loaded:', data);
@@ -291,9 +334,10 @@
       }, []);
 
       const filteredSuggestions = suggestions.filter(s =>
-        s.match.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.league.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.market.toLowerCase().includes(searchQuery.toLowerCase())
+        (selectedLeague === 'All' || s.league === selectedLeague) &&
+        (s.match.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         s.league.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         s.market.toLowerCase().includes(searchQuery.toLowerCase()))
       );
 
       const sortStandings = (league, key) => {
@@ -325,11 +369,24 @@
                 <input
                   type="date"
                   value={selectedDate}
-                  min="2025-09-28"
-                  max="2025-10-04"
+                  min={validDates[0]}
+                  max={validDates[validDates.length - 1]}
+                  list="valid-dates"
                   onChange={e => setSelectedDate(e.target.value)}
                   className="p-2 border rounded dark:bg-gray-700 text-black dark:text-white"
                 />
+                <datalist id="valid-dates">
+                  {validDates.map(date => <option key={date} value={date} />)}
+                </datalist>
+                <select
+                  value={selectedLeague}
+                  onChange={e => setSelectedLeague(e.target.value)}
+                  className="p-2 border rounded dark:bg-gray-700 text-black dark:text-white"
+                >
+                  {['All', 'Premier League', 'English Championship', 'Carabao Cup', 'FA Cup'].map(league => (
+                    <option key={league} value={league}>{league}</option>
+                  ))}
+                </select>
                 <input
                   placeholder="Search matches, leagues, markets..."
                   className="flex-1 p-2 border rounded dark:bg-gray-700 text-black dark:text-white"
@@ -337,7 +394,7 @@
                   onChange={e => setSearchQuery(e.target.value)}
                 />
                 <button
-                  onClick={() => fetchRealSuggestions(selectedDate).then(d => { setSuggestions(d); setSlips(generateSlips(d, standings)); })}
+                  onClick={() => fetchRealSuggestions().then(d => { setSuggestions(d.filter(s => s.date === selectedDate) || getFallbackSuggestions(standings)); setSlips(generateSlips(d, standings)); })}
                   className="brand-green px-4 py-2 rounded text-base sm:text-lg"
                 >
                   Refresh Live
@@ -368,17 +425,25 @@
                             <p>Injuries: Home {sug.injuries.home}, Away {sug.injuries.away}</p>
                           </div>
                         </details>
-                        <a href={sug.betwayLink} target="_blank" rel="noopener noreferrer" className="brand-green px-4 py-2 rounded mt-2 inline-block text-base sm:text-lg">Bet on Betway BW</a>
+                        <a href={sug.betwayLink} target="_blank" rel="noopener noreferrer" className="brand-green px-6 py-3 rounded mt-2 inline-block text-base sm:text-lg">Bet on Betway BW</a>
                       </div>
                     )) : (
-                      <p className="text-center text-muted-gray">No matches found for "{searchQuery}". Try another term.</p>
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow card">
+                        <p className="text-center text-muted-gray">No matches for {selectedDate}. Try past slips or upcoming games.</p>
+                        <button
+                          onClick={() => setSelectedDate(validDates[0])}
+                          className="brand-green px-4 py-2 rounded mt-2 inline-block text-base sm:text-lg"
+                        >
+                          View Next Match Day
+                        </button>
+                      </div>
                     )}
                   </div>
                 </section>
 
                 <section>
                   <h2 className="text-2xl font-semibold">Home-Favored Multi-Team Slips (~1.20 Odds)</h2>
-                  <p className="text-sm text-muted-gray mb-4">2-10 leg combos (1X/Home Win or Over 0.5 for scorers), 85-95%+ win prob</p>
+                  <p className="text-sm text-muted-gray mb-4">2-5 leg combos (1X/Home Win or Over 0.5 for scorers), 85-95%+ win prob</p>
                   <div className="space-y-4">
                     {slips.map(slip => (
                       <div key={slip.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow card border-l-4 border-blue-500">
@@ -389,7 +454,7 @@
                             <li key={i}>• {leg.match} ({leg.league}): {leg.market} @ {leg.odds} ({leg.winProb}, Score: {leg.score})</li>
                           ))}
                         </ul>
-                        <a href={BETWAY_BW_BASE} target="_blank" rel="noopener noreferrer" className="brand-green px-4 py-2 rounded mt-2 inline-block text-base sm:text-lg">Build Slip on Betway BW</a>
+                        <a href={BETWAY_BW_BASE} target="_blank" rel="noopener noreferrer" className="brand-green px-6 py-3 rounded mt-2 inline-block text-base sm:text-lg">Build Slip on Betway BW</a>
                       </div>
                     ))}
                   </div>
