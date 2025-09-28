@@ -1,8 +1,3 @@
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +19,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <style>
-    /* Theme: Deep blues, vibrant greens, gold accents */
     :root {
       --brand-dark-blue: #001F3F;
       --brand-green: #28A745;
@@ -53,56 +47,82 @@
   <div id="root"></div>
 
   <script type="text/babel" defer>
-    // Config for Betway Botswana
+    // Config
     const API_KEY = 'YOUR_API_KEY_HERE'; // Get from https://the-odds-api.com
     const TARGET_ODDS = 1.20; // Target for slips
     const BOTSWANA_TZ_OFFSET = 2 * 3600000; // CAT (UTC+2) in ms
-    const BETWAY_BW_BASE = 'https://betway.co.bw/en/sports/football'; // Botswana-specific
-    const MARKETS = ['h2h', 'totals', 'spreads']; // Double chance, over/under, handicaps
+    const BETWAY_BW_BASE = 'https://betway.co.bw/en/sports/football';
+    const MARKETS = ['h2h', 'totals', 'spreads'];
 
-    // 40+ mock suggestions for Sep 28, 2025 (real-time fixtures, Betway BW leagues)
-    // Times in CAT (UTC+2). Ultra-safe odds (1.01-1.20) for high-prob slips
+    // Full league standings (mock data, Sep 2025)
+    const mockStandings = {
+      "Premier League": [
+        { team: "Liverpool", played: 6, won: 5, drawn: 1, lost: 0, gf: 15, ga: 3, pts: 16 },
+        { team: "Crystal Palace", played: 6, won: 4, drawn: 2, lost: 0, gf: 10, ga: 5, pts: 14 },
+        { team: "Tottenham", played: 6, won: 4, drawn: 1, lost: 1, gf: 12, ga: 6, pts: 13 },
+        { team: "Arsenal", played: 6, won: 4, drawn: 1, lost: 1, gf: 11, ga: 4, pts: 13 },
+        { team: "Man City", played: 6, won: 3, drawn: 2, lost: 1, gf: 10, ga: 5, pts: 11 },
+        { team: "Chelsea", played: 6, won: 3, drawn: 1, lost: 2, gf: 9, ga: 7, pts: 10 },
+        { team: "Newcastle", played: 6, won: 2, drawn: 3, lost: 1, gf: 8, ga: 6, pts: 9 },
+        { team: "Aston Villa", played: 6, won: 2, drawn: 2, lost: 2, gf: 7, ga: 7, pts: 8 },
+        { team: "Brighton", played: 6, won: 2, drawn: 2, lost: 2, gf: 8, ga: 8, pts: 8 },
+        { team: "Man United", played: 6, won: 2, drawn: 1, lost: 3, gf: 6, ga: 8, pts: 7 },
+        { team: "West Ham", played: 6, won: 2, drawn: 1, lost: 3, gf: 5, ga: 7, pts: 7 },
+        { team: "Fulham", played: 6, won: 2, drawn: 1, lost: 3, gf: 5, ga: 8, pts: 7 },
+        { team: "Everton", played: 6, won: 2, drawn: 0, lost: 4, gf: 4, ga: 9, pts: 6 },
+        { team: "Leicester", played: 6, won: 1, drawn: 3, lost: 2, gf: 6, ga: 8, pts: 6 },
+        { team: "Wolves", played: 6, won: 1, drawn: 2, lost: 3, gf: 5, ga: 9, pts: 5 },
+        { team: "Brentford", played: 6, won: 1, drawn: 2, lost: 3, gf: 4, ga: 8, pts: 5 },
+        { team: "Southampton", played: 6, won: 1, drawn: 2, lost: 3, gf: 4, ga: 9, pts: 5 },
+        { team: "Bournemouth", played: 6, won: 1, drawn: 1, lost: 4, gf: 3, ga: 8, pts: 4 },
+        { team: "Ipswich", played: 6, won: 0, drawn: 3, lost: 3, gf: 3, ga: 9, pts: 3 },
+        { team: "Nottingham Forest", played: 6, won: 0, drawn: 2, lost: 4, gf: 2, ga: 9, pts: 2 }
+      ],
+      "PSL": [
+        { team: "Mamelodi Sundowns", played: 6, won: 5, drawn: 1, lost: 0, gf: 13, ga: 2, pts: 16 },
+        { team: "Orlando Pirates", played: 6, won: 4, drawn: 1, lost: 1, gf: 10, ga: 4, pts: 13 },
+        { team: "Kaizer Chiefs", played: 6, won: 3, drawn: 2, lost: 1, gf: 9, ga: 5, pts: 11 },
+        { team: "SuperSport United", played: 6, won: 3, drawn: 1, lost: 2, gf: 8, ga: 6, pts: 10 },
+        { team: "Stellenbosch", played: 6, won: 2, drawn: 3, lost: 1, gf: 7, ga: 5, pts: 9 },
+        { team: "Cape Town City", played: 6, won: 2, drawn: 2, lost: 2, gf: 6, ga: 6, pts: 8 },
+        { team: "Polokwane City", played: 6, won: 2, drawn: 2, lost: 2, gf: 5, ga: 5, pts: 8 },
+        { team: "Golden Arrows", played: 6, won: 2, drawn: 1, lost: 3, gf: 5, ga: 7, pts: 7 },
+        { team: "Chippa United", played: 6, won: 2, drawn: 1, lost: 3, gf: 4, ga: 6, pts: 7 },
+        { team: "Sekhukhune United", played: 6, won: 2, drawn: 1, lost: 3, gf: 4, ga: 7, pts: 7 },
+        { team: "TS Galaxy", played: 6, won: 1, drawn: 3, lost: 2, gf: 4, ga: 5, pts: 6 },
+        { team: "AmaZulu", played: 6, won: 1, drawn: 2, lost: 3, gf: 3, ga: 6, pts: 5 },
+        { team: "Richards Bay", played: 6, won: 1, drawn: 2, lost: 3, gf: 3, ga: 7, pts: 5 },
+        { team: "Royal AM", played: 6, won: 1, drawn: 2, lost: 3, gf: 3, ga: 7, pts: 5 },
+        { team: "Marumo Gallants", played: 6, won: 1, drawn: 1, lost: 4, gf: 2, ga: 8, pts: 4 },
+        { team: "Magesi FC", played: 6, won: 0, drawn: 2, lost: 4, gf: 2, ga: 8, pts: 2 }
+      ]
+      // Add other leagues (La Liga, Bundesliga, etc.) as needed
+    };
+
+    // Mock suggestions for Sep 28–Oct 4, 2025 (40+ matches/day)
     const mockSuggestions = [
-      // Premier League
-      { id: 1, match: "Aston Villa vs Fulham", league: "Premier League", date: "2025-09-28", time: "16:00", market: "Under 2.5 Goals", odds: 1.20, confidence: "High", reasoning: "Villa averages 1.8 goals at home (form: W-D-W-L-D). Fulham low-scoring away. H2H: 4/5 under 2.5.", form: { home: "W-D-W-L-D", away: "D-L-D-W-L" }, headToHead: "2 draws last 5", injuries: { home: "Ollie Watkins doubtful", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: (1/1.20*100).toFixed(0) + "%" },
-      { id: 2, match: "Newcastle vs Arsenal", league: "Premier League", date: "2025-09-28", time: "13:30", market: "Double Chance (X2)", odds: 1.15, confidence: "High", reasoning: "Arsenal 6-game unbeaten run (form: W-W-D-W-W). Newcastle draw-heavy. H2H: Arsenal 3/5.", form: { home: "D-W-L-W-D", away: "W-W-D-W-W" }, headToHead: "Arsenal edge", injuries: { home: "None", away: "Saka fit" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: (1/1.15*100).toFixed(0) + "%" },
-      { id: 3, match: "Brighton vs Tottenham", league: "Premier League", date: "2025-09-28", time: "15:00", market: "Over 1.5 Goals", odds: 1.10, confidence: "High", reasoning: "Brighton scores 2+ last 4 (form). Tottenham open games. H2H: 4/5 over.", form: { home: "W-D-L-W-W", away: "W-L-D-W-D" }, headToHead: "High scoring", injuries: { home: "None", away: "Son fit" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: (1/1.10*100).toFixed(0) + "%" },
-      // Serie A
-      { id: 4, match: "Sassuolo vs Udinese", league: "Serie A", date: "2025-09-28", time: "13:30", market: "Double Chance (X2)", odds: 1.10, confidence: "High", reasoning: "Udinese unbeaten 3 away vs Sassuolo (H2H). Both mid-table, defensive.", form: { home: "L-D-W-L-D", away: "D-W-D-L-W" }, headToHead: "4 draws last 5", injuries: { home: "None", away: "Lucca out" }, betwayLink: `${BETWAY_BW_BASE}/italy-serie-a`, winProb: (1/1.10*100).toFixed(0) + "%" },
-      { id: 5, match: "AC Milan vs Napoli", league: "Serie A", date: "2025-09-28", time: "20:45", market: "Under 2.5 Goals", odds: 1.20, confidence: "High", reasoning: "Milan 4 clean sheets (form). Napoli low away goals. H2H: 3/5 under.", form: { home: "W-W-D-W-W", away: "W-L-D-W-L" }, headToHead: "Low scoring", injuries: { home: "Hernandez fit", away: "Osimhen doubtful" }, betwayLink: `${BETWAY_BW_BASE}/italy-serie-a`, winProb: (1/1.20*100).toFixed(0) + "%" },
-      // Ligue 1
-      { id: 6, match: "Metz vs Le Havre", league: "Ligue 1", date: "2025-09-28", time: "15:00", market: "Double Chance (1X)", odds: 1.05, confidence: "Very High", reasoning: "Metz strong vs bottom teams (form). H2H: 2/4 draws.", form: { home: "D-L-W-D-L", away: "L-D-L-D-W" }, headToHead: "Draws common", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/france-ligue-1`, winProb: (1/1.05*100).toFixed(0) + "%" },
-      { id: 7, match: "Lille vs Lyon", league: "Ligue 1", date: "2025-09-28", time: "17:05", market: "Double Chance (X2)", odds: 1.12, confidence: "High", reasoning: "Lyon no first-half goals conceded (form). Lille draw-heavy. H2H: Lyon 3/5.", form: { home: "W-D-L-W-D", away: "D-W-D-W-L" }, headToHead: "Lyon edge", injuries: { home: "David fit", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/france-ligue-1`, winProb: (1/1.12*100).toFixed(0) + "%" },
-      // Bundesliga
-      { id: 8, match: "Freiburg vs Hoffenheim", league: "Bundesliga", date: "2025-09-28", time: "15:30", market: "Over 1.5 Goals", odds: 1.08, confidence: "High", reasoning: "Freiburg 8 goals last 3 (form). Hoffenheim leaky. H2H: All 5 over 1.5.", form: { home: "W-W-L-W-W", away: "L-W-D-L-W" }, headToHead: "High scoring", injuries: { home: "None", away: "Kramaric doubtful" }, betwayLink: `${BETWAY_BW_BASE}/germany-bundesliga`, winProb: (1/1.08*100).toFixed(0) + "%" },
-      { id: 9, match: "Bayern Munich vs Dortmund", league: "Bundesliga", date: "2025-09-28", time: "18:30", market: "Over 2.5 Goals", odds: 1.15, confidence: "High", reasoning: "Bayern 3+ goals last 4 (form). Dortmund open defense. H2H: 4/5 over.", form: { home: "W-W-W-W-D", away: "W-L-D-W-L" }, headToHead: "High scoring", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/germany-bundesliga`, winProb: (1/1.15*100).toFixed(0) + "%" },
-      // La Liga
-      { id: 10, match: "Real Betis vs Osasuna", league: "La Liga", date: "2025-09-28", time: "19:30", market: "Over 1.5 Goals", odds: 1.15, confidence: "High", reasoning: "Betis 2+ last 3 (form). Osasuna weak defense. H2H: 4/5 over.", form: { home: "W-D-W-L-W", away: "D-L-W-D-L" }, headToHead: "Betis dominant", injuries: { home: "None", away: "Budimir out" }, betwayLink: `${BETWAY_BW_BASE}/spain-la-liga`, winProb: (1/1.15*100).toFixed(0) + "%" },
-      { id: 11, match: "Atletico Madrid vs Valencia", league: "La Liga", date: "2025-09-28", time: "21:00", market: "Double Chance (1X)", odds: 1.05, confidence: "Very High", reasoning: "Atletico unbeaten home (form: W-W-D-W-W). Valencia struggling. H2H: Atletico 4/5.", form: { home: "W-W-D-W-W", away: "L-L-D-L-W" }, headToHead: "Atletico dominant", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/spain-la-liga`, winProb: (1/1.05*100).toFixed(0) + "%" },
-      // PSL (South Africa)
-      { id: 12, match: "Mamelodi Sundowns vs Cape Town City", league: "PSL", date: "2025-09-28", time: "15:00", market: "Double Chance (1X)", odds: 1.01, confidence: "Very High", reasoning: "Sundowns unbeaten home (form: W-W-W-D-W). H2H: 5/5 wins/draws.", form: { home: "W-W-W-D-W", away: "L-D-L-W-D" }, headToHead: "Sundowns dominant", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/south-africa-psl`, winProb: (1/1.01*100).toFixed(0) + "%" },
-      { id: 13, match: "Kaizer Chiefs vs Orlando Pirates", league: "PSL", date: "2025-09-28", time: "18:00", market: "Under 2.5 Goals", odds: 1.18, confidence: "High", reasoning: "Soweto Derby low-scoring (H2H: 4/6 under). Form: Tight games.", form: { home: "D-W-L-D-W", away: "W-D-L-W-D" }, headToHead: "Draws common", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/south-africa-psl`, winProb: (1/1.18*100).toFixed(0) + "%" },
-      { id: 14, match: "SuperSport United vs Stellenbosch", league: "PSL", date: "2025-09-28", time: "16:30", market: "Double Chance (1X)", odds: 1.08, confidence: "High", reasoning: "SuperSport strong home (form). H2H: 3/5 wins/draws.", form: { home: "W-D-W-L-D", away: "D-L-W-D-L" }, headToHead: "SuperSport edge", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/south-africa-psl`, winProb: (1/1.08*100).toFixed(0) + "%" },
-      // CAF Qualifiers
-      { id: 15, match: "Nigeria vs South Africa", league: "CAF Qualifiers", date: "2025-09-28", time: "21:00", market: "Double Chance (1X)", odds: 1.05, confidence: "Very High", reasoning: "Nigeria 7-game home unbeaten (H2H). Form: WWWWW.", form: { home: "W-W-W-W-W", away: "W-L-D-L-W" }, headToHead: "Nigeria 4/5", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/africa-cup-of-nations`, winProb: (1/1.05*100).toFixed(0) + "%" },
-      { id: 16, match: "Algeria vs Ghana", league: "CAF Qualifiers", date: "2025-09-28", time: "19:00", market: "Under 2.5 Goals", odds: 1.10, confidence: "High", reasoning: "Algeria defensive home (form). Ghana low-scoring away. H2H: 3/5 under.", form: { home: "W-D-W-W-L", away: "D-L-W-D-L" }, headToHead: "Low scoring", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/africa-cup-of-nations`, winProb: (1/1.10*100).toFixed(0) + "%" },
-      // Women's Leagues
-      { id: 17, match: "Manchester City Women vs Arsenal Women", league: "FA Women's Super League", date: "2025-09-28", time: "16:00", market: "Double Chance (1X)", odds: 1.12, confidence: "High", reasoning: "City 8-game home unbeaten (form). H2H: City 2/3.", form: { home: "W-W-W-D-W", away: "W-L-W-D-W" }, headToHead: "City edge", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-womens-super-league`, winProb: (1/1.12*100).toFixed(0) + "%" },
-      { id: 18, match: "Chelsea Women vs Everton Women", league: "FA Women's Super League", date: "2025-09-28", time: "14:00", market: "Asian Handicap -1 Chelsea", odds: 1.08, confidence: "High", reasoning: "Chelsea dominant home (form: W-W-W-W-D). Everton struggling. H2H: Chelsea 5/5.", form: { home: "W-W-W-W-D", away: "L-L-D-L-W" }, headToHead: "Chelsea dominant", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-womens-super-league`, winProb: (1/1.08*100).toFixed(0) + "%" },
-      // NWSL
-      { id: 19, match: "Portland Thorns vs Washington Spirit", league: "NWSL", date: "2025-09-28", time: "20:00", market: "Over 1.5 Goals", odds: 1.10, confidence: "High", reasoning: "Thorns 2+ last 4 (form). Spirit open games. H2H: 4/5 over.", form: { home: "W-W-D-W-L", away: "D-L-W-W-D" }, headToHead: "High scoring", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/usa-nwsl`, winProb: (1/1.10*100).toFixed(0) + "%" },
-      { id: 20, match: "North Carolina Courage vs Orlando Pride", league: "NWSL", date: "2025-09-28", time: "21:00", market: "Double Chance (1X)", odds: 1.07, confidence: "High", reasoning: "Courage strong home (form). Pride solid but draw-heavy. H2H: 3/5 draws.", form: { home: "W-D-W-L-W", away: "D-W-D-L-W" }, headToHead: "Draws common", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/usa-nwsl`, winProb: (1/1.07*100).toFixed(0) + "%" },
-      // More matches for volume (40+ total)
-      ...Array.from({ length: 20 }, (_, i) => ({
-        id: 21 + i,
+      // Sep 28, 2025
+      { id: 1, match: "Aston Villa vs Fulham", league: "Premier League", date: "2025-09-28", time: "16:00", market: "Under 2.5 Goals", odds: 1.20, confidence: "High", reasoning: "Villa averages 1.8 goals at home. Fulham low-scoring away. H2H: 4/5 under 2.5.", form: { home: "W-D-W-L-D", away: "D-L-D-W-L" }, headToHead: "2 draws last 5", injuries: { home: "Ollie Watkins doubtful", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: (1/1.20*100).toFixed(0) + "%" },
+      { id: 2, match: "Newcastle vs Arsenal", league: "Premier League", date: "2025-09-28", time: "13:30", market: "Double Chance (X2)", odds: 1.15, confidence: "High", reasoning: "Arsenal 6-game unbeaten run. Newcastle draw-heavy. H2H: Arsenal 3/5.", form: { home: "D-W-L-W-D", away: "W-W-D-W-W" }, headToHead: "Arsenal edge", injuries: { home: "None", away: "Saka fit" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: (1/1.15*100).toFixed(0) + "%" },
+      { id: 3, match: "Sassuolo vs Udinese", league: "Serie A", date: "2025-09-28", time: "13:30", market: "Double Chance (X2)", odds: 1.10, confidence: "High", reasoning: "Udinese unbeaten 3 away vs Sassuolo. Both defensive. H2H: 4 draws.", form: { home: "L-D-W-L-D", away: "D-W-D-L-W" }, headToHead: "4 draws last 5", injuries: { home: "None", away: "Lucca out" }, betwayLink: `${BETWAY_BW_BASE}/italy-serie-a`, winProb: (1/1.10*100).toFixed(0) + "%" },
+      { id: 4, match: "Mamelodi Sundowns vs Cape Town City", league: "PSL", date: "2025-09-28", time: "15:00", market: "Double Chance (1X)", odds: 1.01, confidence: "Very High", reasoning: "Sundowns unbeaten home. H2H: 5/5 wins/draws.", form: { home: "W-W-W-D-W", away: "L-D-L-W-D" }, headToHead: "Sundowns dominant", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/south-africa-psl`, winProb: (1/1.01*100).toFixed(0) + "%" },
+      // Sep 29, 2025
+      { id: 5, match: "Man United vs Liverpool", league: "Premier League", date: "2025-09-29", time: "16:00", market: "Double Chance (1X)", odds: 1.22, confidence: "High", reasoning: "Man Utd strong home form. Liverpool recent draws. H2H: 2/5 draws.", form: { home: "W-W-D-W-W", away: "D-W-D-L-W" }, headToHead: "Draws common", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/england-premier-league`, winProb: (1/1.22*100).toFixed(0) + "%" },
+      { id: 6, match: "Barcelona vs Real Madrid", league: "La Liga", date: "2025-09-29", time: "20:00", market: "Over 2.5 Goals", odds: 1.19, confidence: "Medium-High", reasoning: "El Clasico high-scoring. Both attacking. H2H: 3/5 over.", form: { home: "W-W-W-D-L", away: "W-L-D-W-W" }, headToHead: "High scoring", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/spain-la-liga`, winProb: (1/1.19*100).toFixed(0) + "%" },
+      // Oct 1, 2025
+      { id: 7, match: "Kaizer Chiefs vs Orlando Pirates", league: "PSL", date: "2025-10-01", time: "18:00", market: "Under 2.5 Goals", odds: 1.18, confidence: "High", reasoning: "Soweto Derby low-scoring. H2H: 4/6 under.", form: { home: "D-W-L-D-W", away: "W-D-L-W-D" }, headToHead: "Draws common", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/south-africa-psl`, winProb: (1/1.18*100).toFixed(0) + "%" },
+      { id: 8, match: "Bayern Munich vs Dortmund", league: "Bundesliga", date: "2025-10-01", time: "18:30", market: "Over 2.5 Goals", odds: 1.15, confidence: "High", reasoning: "Bayern 3+ goals last 4. Dortmund open defense. H2H: 4/5 over.", form: { home: "W-W-W-W-D", away: "W-L-D-W-L" }, headToHead: "High scoring", injuries: { home: "None", away: "None" }, betwayLink: `${BETWAY_BW_BASE}/germany-bundesliga`, winProb: (1/1.15*100).toFixed(0) + "%" },
+      // Oct 2-4, 2025 (more matches)
+      ...Array.from({ length: 72 }, (_, i) => ({
+        id: 9 + i,
         match: `Team${i+1} vs Team${i+2}`,
         league: ["Premier League", "Serie A", "Ligue 1", "Bundesliga", "La Liga", "PSL", "CAF Qualifiers", "FA WSL", "NWSL"][i % 9],
-        date: "2025-09-28",
+        date: `2025-10-0${1 + (i % 4)}`,
         time: `${12 + (i % 10)}:00`,
         market: ["Double Chance (1X)", "Under 2.5 Goals", "Over 1.5 Goals", "Asian Handicap -1"][i % 4],
         odds: (1.01 + (i % 10) * 0.01).toFixed(2),
         confidence: "High",
-        reasoning: `Safe pick based on recent form and H2H trends. Low odds for high probability.`,
+        reasoning: `Safe pick based on form and H2H trends.`,
         form: { home: "W-W-D-L-W", away: "D-L-W-D-L" },
         headToHead: "Favorable",
         injuries: { home: "None", away: "None" },
@@ -111,55 +131,12 @@
       }))
     ];
 
-    // Mock standings for Betway BW leagues (based on 2025 trends)
-    const mockStandings = {
-      "Premier League": [
-        { team: "Liverpool", played: 6, won: 5, drawn: 1, lost: 0, gf: 15, ga: 3, pts: 16 },
-        { team: "Crystal Palace", played: 6, won: 4, drawn: 2, lost: 0, gf: 10, ga: 5, pts: 14 },
-        { team: "Tottenham", played: 6, won: 4, drawn: 1, lost: 1, gf: 12, ga: 6, pts: 13 },
-        // More...
-      ],
-      "La Liga": [
-        { team: "Real Madrid", played: 6, won: 5, drawn: 1, lost: 0, gf: 14, ga: 4, pts: 16 },
-        // ...
-      ],
-      "Bundesliga": [
-        { team: "Bayern Munich", played: 6, won: 5, drawn: 0, lost: 1, gf: 18, ga: 5, pts: 15 },
-        // ...
-      ],
-      "Serie A": [
-        { team: "Inter Milan", played: 6, won: 4, drawn: 2, lost: 0, gf: 12, ga: 4, pts: 14 },
-        // ...
-      ],
-      "Ligue 1": [
-        { team: "PSG", played: 6, won: 5, drawn: 1, lost: 0, gf: 16, ga: 3, pts: 16 },
-        // ...
-      ],
-      "PSL": [
-        { team: "Mamelodi Sundowns", played: 6, won: 5, drawn: 1, lost: 0, gf: 13, ga: 2, pts: 16 },
-        { team: "Orlando Pirates", played: 6, won: 4, drawn: 1, lost: 1, gf: 10, ga: 4, pts: 13 },
-        // ...
-      ],
-      "CAF Qualifiers": [
-        { team: "Nigeria", played: 4, won: 3, drawn: 1, lost: 0, gf: 8, ga: 2, pts: 10 },
-        // ...
-      ],
-      "FA Women's Super League": [
-        { team: "Chelsea Women", played: 5, won: 4, drawn: 1, lost: 0, gf: 11, ga: 3, pts: 13 },
-        // ...
-      ],
-      "NWSL": [
-        { team: "Portland Thorns", played: 5, won: 4, drawn: 0, lost: 1, gf: 12, ga: 5, pts: 12 },
-        // ...
-      ]
-    };
-
     // Calculate implied probability
     function impliedProb(odds) { return (1 / odds) * 100; }
 
-    // Generate 30+ ultra-safe slips
+    // Generate 30+ multi-team slips (2-10 legs)
     function generateSlips(suggestions, numSlips = 30) {
-      const lowOdds = suggestions.filter(s => s.odds <= 1.10 && impliedProb(s.odds) > 90); // Ultra-safe
+      const lowOdds = suggestions.filter(s => s.odds <= 1.10 && impliedProb(s.odds) > 90);
       const slips = [];
       for (let i = 0; i < numSlips; i++) {
         const numLegs = Math.floor(Math.random() * 9) + 2; // 2-10 legs
@@ -167,27 +144,33 @@
         const totalOdds = legs.reduce((acc, leg) => acc * leg.odds, 1).toFixed(2);
         const totalProb = (legs.reduce((acc, leg) => acc * impliedProb(leg.odds) / 100, 1) * 100).toFixed(0) + "%";
         if (totalOdds <= 1.20 && totalProb >= "85") {
-          slips.push({ id: i + 1, legs, totalOdds, winProb: totalProb, reasoning: `Ultra-safe ${numLegs}-leg multi: ~${totalProb} win chance.` });
+          slips.push({
+            id: i + 1,
+            legs,
+            totalOdds,
+            winProb: totalProb,
+            reasoning: `Ultra-safe ${numLegs}-leg multi: ~${totalProb} win chance.`
+          });
         }
       }
       return slips;
     }
 
     // Fetch real-time odds
-    async function fetchRealSuggestions() {
+    async function fetchRealSuggestions(selectedDate) {
       if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
-        console.log('Using mock data - add API key for live Betway BW odds');
-        return mockSuggestions;
+        console.log('Using mock data for', selectedDate);
+        return mockSuggestions.filter(s => s.date === selectedDate);
       }
       try {
-        const sports = ['soccer_epl', 'soccer_la_liga', 'soccer_bundesliga', 'soccer_serie_a', 'soccer_ligue_one', 'soccer_psl', 'soccer_caf', 'soccer_uefa_champs_league', 'soccer_uefa_europa_league', 'soccer_fa_wsl', 'soccer_nwsl'];
+        const sports = ['soccer_epl', 'soccer_la_liga', 'soccer_bundesliga', 'soccer_serie_a', 'soccer_ligue_one', 'soccer_psl', 'soccer_caf', 'soccer_fa_wsl', 'soccer_nwsl'];
         const suggestions = [];
         for (const sport of sports) {
           const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${API_KEY}&regions=uk&markets=${MARKETS.join(',')}&oddsFormat=decimal`;
           const response = await fetch(url);
           const data = await response.json();
           data.forEach(event => {
-            if (new Date(event.commence_time).toDateString() === new Date().toDateString()) {
+            if (new Date(event.commence_time).toDateString() === new Date(selectedDate).toDateString()) {
               const bestMarket = event.bookmakers?.find(b => b.key === 'betway')?.markets?.find(m => MARKETS.includes(m.key));
               if (bestMarket) {
                 const outcome = bestMarket.outcomes?.find(o => o.price <= TARGET_ODDS + 0.05);
@@ -202,7 +185,7 @@
                     market: `${bestMarket.key} (${outcome.name})`,
                     odds: outcome.price.toFixed(2),
                     confidence: outcome.price < 1.10 ? 'Very High' : 'High',
-                    reasoning: `Live Betway BW odds. Low price = high prob (form/H2H). Updated: ${new Date(event.last_update).toLocaleTimeString()}`,
+                    reasoning: `Live Betway BW odds. Low price = high prob. Updated: ${new Date(event.last_update).toLocaleTimeString()}`,
                     form: { home: "N/A", away: "N/A" },
                     headToHead: "N/A",
                     injuries: { home: "N/A", away: "N/A" },
@@ -214,10 +197,10 @@
             }
           });
         }
-        return suggestions.length >= 30 ? suggestions.slice(0, 40) : mockSuggestions;
+        return suggestions.length >= 30 ? suggestions.slice(0, 40) : mockSuggestions.filter(s => s.date === selectedDate);
       } catch (error) {
         console.error('API Error:', error);
-        return mockSuggestions;
+        return mockSuggestions.filter(s => s.date === selectedDate);
       }
     }
 
@@ -238,12 +221,12 @@
       const [slips, setSlips] = React.useState([]);
       const [loading, setLoading] = React.useState(true);
       const [darkMode, setDarkMode] = React.useState(false);
-      const [selectedLeague, setSelectedLeague] = React.useState('All');
+      const [selectedDate, setSelectedDate] = React.useState('2025-09-28');
 
       // Initial fetch and chart
       React.useEffect(() => {
-        console.log('Fetching suggestions...');
-        fetchRealSuggestions().then(data => {
+        console.log('Fetching for', selectedDate);
+        fetchRealSuggestions(selectedDate).then(data => {
           console.log('Suggestions loaded:', data.length);
           setSuggestions(data);
           setSlips(generateSlips(data));
@@ -263,20 +246,17 @@
             },
             options: { responsive: true, scales: { y: { beginAtZero: true } } }
           });
-        } else {
-          console.warn('Chart canvas not found');
         }
-      }, [darkMode]);
+      }, [selectedDate, darkMode]);
 
       // Filter suggestions
       const filteredSuggestions = suggestions.filter(s =>
-        (s.match.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         s.league.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         s.market.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        (selectedLeague === 'All' || s.league === selectedLeague)
+        s.match.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.league.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.market.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
-      if (loading) return <div className="loading">Loading live matches & odds...</div>;
+      if (loading) return <div className="loading">Loading matches & odds...</div>;
 
       return (
         <ErrorBoundary>
@@ -285,25 +265,25 @@
             <header className="brand-dark-blue p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold">Thuto's Daily Betting Tips - Betway Botswana</h1>
-                <p className="text-sm">Real-time safe bets for Sep 28, 2025 (CAT, UTC+2)</p>
+                <p className="text-sm">Safe bets for {selectedDate} (CAT, UTC+2)</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  min="2025-09-28"
+                  max="2025-10-04"
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="p-2 border rounded dark:bg-gray-700"
+                />
                 <input
                   placeholder="Search matches, leagues, markets..."
                   className="flex-1 p-2 border rounded dark:bg-gray-700"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
-                <select
-                  className="p-2 border rounded dark:bg-gray-700"
-                  value={selectedLeague}
-                  onChange={e => setSelectedLeague(e.target.value)}
-                >
-                  <option>All</option>
-                  {[...new Set(suggestions.map(s => s.league))].map(l => <option key={l}>{l}</option>)}
-                </select>
                 <button
-                  onClick={() => { setLoading(true); fetchRealSuggestions().then(d => { setSuggestions(d); setSlips(generateSlips(d)); setLoading(false); }); }}
+                  onClick={() => { setLoading(true); fetchRealSuggestions(selectedDate).then(d => { setSuggestions(d); setSlips(generateSlips(d)); setLoading(false); }); }}
                   className="brand-green px-4 py-2 rounded"
                 >
                   Refresh Live
@@ -321,7 +301,7 @@
                 {/* Single Bets */}
                 <section>
                   <h2 className="text-2xl font-semibold">Safe Single Bets (CAT Time)</h2>
-                  <p className="text-sm text-muted-gray mb-4">High-probability picks (~1.01-1.20 odds) based on form, H2H, stats</p>
+                  <p className="text-sm text-muted-gray mb-4">High-probability picks (~1.01-1.20 odds)</p>
                   <div className="space-y-4">
                     {filteredSuggestions.length > 0 ? filteredSuggestions.map(sug => (
                       <div key={sug.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow card border-l-4 border-green-500">
@@ -340,15 +320,15 @@
                         <a href={sug.betwayLink} target="_blank" rel="noopener noreferrer" className="brand-green px-4 py-2 rounded mt-2 inline-block">Bet on Betway BW</a>
                       </div>
                     )) : (
-                      <p className="text-center text-muted-gray">No matches found for "{searchQuery}" in {selectedLeague}. Try another term or select "All".</p>
+                      <p className="text-center text-muted-gray">No matches found for "{searchQuery}". Try another term.</p>
                     )}
                   </div>
                 </section>
 
-                {/* Dynamic Slips */}
+                {/* Multi-Team Slips */}
                 <section>
-                  <h2 className="text-2xl font-semibold">Ultra-Safe Multi Slips (~1.20 Odds)</h2>
-                  <p className="text-sm text-muted-gray mb-4">Dynamic 2-10 leg combos with 85-95%+ win probability</p>
+                  <h2 className="text-2xl font-semibold">Ultra-Safe Multi-Team Slips (~1.20 Odds)</h2>
+                  <p className="text-sm text-muted-gray mb-4">2-10 leg combos with 85-95%+ win probability</p>
                   <div className="space-y-4">
                     {slips.map(slip => (
                       <div key={slip.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow card border-l-4 border-blue-500">
@@ -356,7 +336,7 @@
                         <p className="text-sm">{slip.reasoning}</p>
                         <ul className="text-xs mt-2 space-y-1">
                           {slip.legs.map((leg, i) => (
-                            <li key={i}>• {leg.match}: {leg.market} @ {leg.odds} ({leg.winProb})</li>
+                            <li key={i}>• {leg.match} ({leg.league}): {leg.market} @ {leg.odds} ({leg.winProb})</li>
                           ))}
                         </ul>
                         <a href={BETWAY_BW_BASE} target="_blank" rel="noopener noreferrer" className="brand-green px-4 py-2 rounded mt-2 inline-block">Build Slip on Betway BW</a>
@@ -417,11 +397,11 @@
         console.log('App rendered successfully');
       } else {
         console.error('Root element not found');
-        document.body.innerHTML = '<div class="error">Error: Root element not found. Ensure <div id="root"></div> exists.</div>';
+        document.body.innerHTML = '<div class="error">Error: Root element not found.</div>';
       }
     } catch (err) {
       console.error('Render error:', err);
-      document.body.innerHTML = '<div class="error">Render Error: ' + err.message + '. Check console (F12) for details.</div>';
+      document.body.innerHTML = '<div class="error">Render Error: ' + err.message + '. Check console (F12).</div>';
     }
   </script>
 </body>
