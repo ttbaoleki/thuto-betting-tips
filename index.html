@@ -7,13 +7,12 @@
 
   <!-- React 18 UMD + client -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.client.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Recharts for charts -->
+  <!-- Recharts UMD -->
   <script src="https://cdn.jsdelivr.net/npm/recharts/umd/Recharts.min.js"></script>
 
   <style>
@@ -31,15 +30,14 @@
 <body class="bg-gray-50 min-h-screen">
   <div id="root" class="p-4"></div>
 
-  <script type="text/babel">
-    const { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } = Recharts;
+  <script>
+    const { createElement: h, useState, useEffect, useMemo } = React;
+    const { createRoot } = ReactDOM;
+    const { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } = window.Recharts;
 
-    // ---------------- CONFIG ----------------
     const API_PROVIDER = 'the-odds-api';
-    const API_KEY = 'YOUR_API_KEY_HERE';
     const TARGET_ODDS_MAX = 1.25;
 
-    // Fallback/mock data
     const MOCK_SUGGESTIONS = [
       { id:1, match:"Arsenal vs Chelsea", league:"Premier League", date:"2025-09-28", time:"15:00", market:"Double Chance (1X)", odds:1.22, confidence:"High", reasoning:"Home xG advantage", betwayLink:"https://www.betway.com", oddsTrend:[1.25,1.22,1.20] },
       { id:2, match:"Bayern vs Dortmund", league:"Bundesliga", date:"2025-09-28", time:"18:30", market:"Over 2.5 Goals", odds:1.19, confidence:"Medium-High", reasoning:"High scoring fixture", betwayLink:"https://www.betway.com", oddsTrend:[1.21,1.20,1.19] },
@@ -48,71 +46,21 @@
 
     function formatOdds(o){ return Number(o).toFixed(2); }
 
-    // ---------------- API ----------------
-    async function fetchOdds(region='uk', sportKey='soccer_epl'){
-      if(!API_KEY || API_KEY==='YOUR_API_KEY_HERE') throw new Error('No API key provided');
-      const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?regions=${region}&oddsFormat=decimal&markets=h2h,spreads,totals&dateFormat=iso&apiKey=${API_KEY}`;
-      const r = await fetch(url);
-      if(!r.ok) throw new Error('Odds API error: '+r.status);
-      const data = await r.json();
-
-      const suggestions = [];
-      for(const ev of data){
-        const evMarkets = ev.bookmakers?.flatMap(b => b.markets.map(m=>({book:b.key,m}))) || [];
-        const m = evMarkets.find(x=>['h2h','totals','spreads'].includes(x.m.key))?.m;
-        if(!m) continue;
-
-        // pick outcome closest to target odds
-        const outcome = m.outcomes?.find(o=>o.price && o.price <= TARGET_ODDS_MAX);
-        const bestOutcome = outcome ?? m.outcomes?.reduce((a,b)=>a.price<b.price?a:b,m.outcomes[0]);
-        if(!bestOutcome) continue;
-
-        suggestions.push({
-          id: ev.id || ev.home_team+ev.away_team,
-          match: `${ev.home_team} vs ${ev.away_team}`,
-          league: ev.competition?.name || ev.league || 'Unknown',
-          date: ev.commence_time?.split('T')[0] || '',
-          time: ev.commence_time?.split('T')[1]?.slice(0,5) || '',
-          market: bestOutcome.name || (m.key==='h2h'?'Match Winner':m.key),
-          odds: bestOutcome.price || 1.0,
-          confidence:'Auto',
-          reasoning:`Odds from ${ev.bookmakers?.[0]?.title||'bookmaker'}`,
-          betwayLink:'https://www.betway.com',
-          oddsTrend: [bestOutcome.price, bestOutcome.price*0.98, bestOutcome.price*0.96] // simple trend mock
-        });
-      }
-      return suggestions;
-    }
-
-    // ---------------- React App ----------------
     function App(){
-      const [suggestions,setSuggestions] = React.useState(MOCK_SUGGESTIONS);
-      const [loading,setLoading] = React.useState(false);
-      const [error,setError] = React.useState(null);
+      const [suggestions,setSuggestions] = useState(MOCK_SUGGESTIONS);
+      const [loading,setLoading] = useState(false);
+      const [error,setError] = useState(null);
+      const [query,setQuery] = useState('');
+      const [leagueFilter,setLeagueFilter] = useState('All');
+      const [maxOdds,setMaxOdds] = useState(TARGET_ODDS_MAX);
+      const [selectedMarket,setSelectedMarket] = useState('Any');
 
-      const [query,setQuery] = React.useState('');
-      const [leagueFilter,setLeagueFilter] = React.useState('All');
-      const [maxOdds,setMaxOdds] = React.useState(TARGET_ODDS_MAX);
-      const [selectedMarket,setSelectedMarket] = React.useState('Any');
-
-      const leagues = React.useMemo(()=>{
+      const leagues = useMemo(()=>{
         const s = new Set(suggestions.map(s=>s.league));
         return ['All', ...Array.from(s)];
       },[suggestions]);
 
-      async function refresh(sportKey='soccer_epl'){
-        setLoading(true); setError(null);
-        try {
-          const live = await fetchOdds('uk',sportKey);
-          if(live?.length>0) setSuggestions(live);
-          else setSuggestions(MOCK_SUGGESTIONS);
-        } catch(err){
-          console.warn('Live fetch failed',err);
-          setError(err.message);
-          setSuggestions(MOCK_SUGGESTIONS);
-        } finally{ setLoading(false); }
-      }
-
+      // Filtered suggestions
       const filtered = suggestions.filter(s=>{
         if(leagueFilter!=='All' && s.league!==leagueFilter) return false;
         if(selectedMarket!=='Any' && !s.market.toLowerCase().includes(selectedMarket.toLowerCase())) return false;
@@ -121,115 +69,100 @@
         return true;
       });
 
-      const stats = React.useMemo(()=>{
+      const stats = useMemo(()=>{
         const total = suggestions.length;
         const avgOdds = suggestions.reduce((a,b)=>a+Number(b.odds||0),0)/Math.max(total,1);
         const profitable = suggestions.filter(s=>Number(s.odds)<=1.2).length;
         return {total,avgOdds:avgOdds.toFixed(2),profitable};
       },[suggestions]);
 
-      return (
-        <div className="max-w-6xl mx-auto">
-          <header className="brand-blue p-4 rounded-lg card">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">Thuto's Advanced Betting Tips</h1>
-                <p className="text-sm opacity-90">Handicap, Double Chance, Over/Under — filter and explore!</p>
-              </div>
-              <div className="text-right">
-                <button className="brand-orange px-3 py-2 rounded font-semibold" onClick={()=>refresh()}>
-                  Refresh Live Odds
-                </button>
-                <div className="text-xs mt-1 text-white/80">Provider: {API_PROVIDER}</div>
-              </div>
-            </div>
-          </header>
-
-          <main className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-            <section className="lg:col-span-2 space-y-4">
-              {/* Controls */}
-              <div className="card p-4 bg-white">
-                <div className="flex gap-2 flex-col md:flex-row md:items-center">
-                  <input placeholder="Search match or team..." className="flex-1 border p-2 rounded" value={query} onChange={e=>setQuery(e.target.value)} />
-                  <select className="border p-2 rounded" value={leagueFilter} onChange={e=>setLeagueFilter(e.target.value)}>
-                    {leagues.map(l=><option key={l} value={l}>{l}</option>)}
-                  </select>
-                  <select className="border p-2 rounded" value={selectedMarket} onChange={e=>setSelectedMarket(e.target.value)}>
-                    <option>Any</option>
-                    <option>h2h</option>
-                    <option>totals</option>
-                    <option>spreads</option>
-                    <option>Double Chance</option>
-                    <option>Over/Under</option>
-                  </select>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm">Max Odds</label>
-                    <input type="range" min="1.01" max="2.50" step="0.01" value={maxOdds} onChange={e=>setMaxOdds(e.target.value)} />
-                    <div className="w-16 text-right">{Number(maxOdds).toFixed(2)}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Suggestions */}
-              <div className="space-y-3">
-                {loading && <div className="p-4 card bg-white">Loading live odds...</div>}
-                {error && <div className="p-3 card bg-red-50 text-red-700">Error: {error}</div>}
-                {filtered.length===0 && <div className="p-4 card bg-white">No suggestions match your filters.</div>}
-
-                {filtered.map(s=>(
-                  <div key={s.id} className="p-4 card bg-white flex flex-col md:flex-row justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="text-lg font-semibold">{s.match}</h3>
-                        <span className="text-sm text-muted">{s.league}</span>
-                      </div>
-                      <div className="text-sm text-gray-600">{s.date} {s.time} • {s.market}</div>
-                      <p className="mt-2">{s.reasoning}</p>
-                    </div>
-                    <div className="text-right flex flex-col items-end gap-2">
-                      <div className="text-xl font-bold brand-blue-text">{formatOdds(s.odds)}</div>
-                      <a className="inline-block brand-orange px-3 py-1 rounded text-sm" href={s.betwayLink} target="_blank">Bet on Betway</a>
-                      {/* Odds Trend Chart */}
-                      <LineChart width={200} height={80} data={s.oddsTrend.map((v,i)=>({name:i,odds:v}))}>
-                        <XAxis hide dataKey="name" />
-                        <YAxis hide domain={['dataMin','dataMax']} />
-                        <Tooltip formatter={val=>formatOdds(val)} />
-                        <Line type="monotone" dataKey="odds" stroke="#FF7A00" strokeWidth={2} dot={false} />
-                        <CartesianGrid stroke="#eee" strokeDasharray="3 3" />
-                      </LineChart>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <aside className="space-y-4">
-              <div className="card p-4 bg-white">
-                <h4 className="font-semibold">Quick Stats</h4>
-                <p className="mt-2 text-sm text-gray-700">Total suggestions: <strong>{stats.total}</strong></p>
-                <p className="text-sm text-gray-700">Avg odds: <strong>{stats.avgOdds}</strong></p>
-                <p className="text-sm text-gray-700">Odds ≤ 1.20: <strong>{stats.profitable}</strong></p>
-              </div>
-
-              <div className="card p-4 bg-white">
-                <h4 className="font-semibold">Share</h4>
-                <p className="text-sm text-gray-600">Copy this page URL and share with followers.</p>
-                <button className="mt-2 border rounded px-3 py-1" onClick={()=>navigator.clipboard?.writeText(window.location.href)}>Copy Link</button>
-              </div>
-            </aside>
-          </main>
-
-          <footer className="text-center text-sm text-gray-500 mt-6 mb-6">
-            <div>Data provider: {API_PROVIDER}. If live unavailable, mock data is used.</div>
-            <div className="mt-2">Powered by Thuto — use responsibly. Betting involves risk.</div>
-          </footer>
-        </div>
+      return h('div',{className:'max-w-6xl mx-auto'},
+        // Header
+        h('header',{className:'brand-blue p-4 rounded-lg card'},
+          h('div',{className:'flex items-center justify-between'},
+            h('div',{},
+              h('h1',{className:'text-2xl font-bold'},"Thuto's Advanced Betting Tips"),
+              h('p',{className:'text-sm opacity-90'},"Handicap, Double Chance, Over/Under — filter and explore!")
+            ),
+            h('div',{className:'text-right'},
+              h('button',{className:'brand-orange px-3 py-2 rounded font-semibold', onClick:()=>setSuggestions(MOCK_SUGGESTIONS)}, "Refresh Live Odds"),
+              h('div',{className:'text-xs mt-1 text-white/80'}, `Provider: ${API_PROVIDER}`)
+            )
+          )
+        ),
+        // Main content
+        h('main',{className:'grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4'},
+          // Left: controls + suggestions
+          h('section',{className:'lg:col-span-2 space-y-4'},
+            // Controls
+            h('div',{className:'card p-4 bg-white'},
+              h('div',{className:'flex gap-2 flex-col md:flex-row md:items-center'},
+                h('input',{placeholder:'Search match or team...', className:'flex-1 border p-2 rounded', value:query, onChange:e=>setQuery(e.target.value)}),
+                h('select',{className:'border p-2 rounded', value:leagueFilter, onChange:e=>setLeagueFilter(e.target.value)},
+                  leagues.map(l=>h('option',{key:l,value:l},l))
+                ),
+                h('select',{className:'border p-2 rounded', value:selectedMarket, onChange:e=>setSelectedMarket(e.target.value)},
+                  ['Any','h2h','totals','spreads','Double Chance','Over/Under'].map(m=>h('option',{key:m},m))
+                ),
+                h('div',{className:'flex items-center gap-2'},
+                  h('label',{className:'text-sm'},"Max Odds"),
+                  h('input',{type:'range', min:1.01, max:2.50, step:0.01, value:maxOdds, onChange:e=>setMaxOdds(e.target.value)}),
+                  h('div',{className:'w-16 text-right'}, Number(maxOdds).toFixed(2))
+                )
+              )
+            ),
+            // Suggestions
+            h('div',{className:'space-y-3'},
+              filtered.length===0 && h('div',{className:'p-4 card bg-white'}, "No suggestions match your filters."),
+              filtered.map(s =>
+                h('div',{key:s.id,className:'p-4 card bg-white flex flex-col md:flex-row justify-between items-start gap-4'},
+                  h('div',{className:'flex-1'},
+                    h('div',{className:'flex items-baseline gap-2'},
+                      h('h3',{className:'text-lg font-semibold'}, s.match),
+                      h('span',{className:'text-sm text-muted'}, s.league)
+                    ),
+                    h('div',{className:'text-sm text-gray-600'}, `${s.date} ${s.time} • ${s.market}`),
+                    h('p',{className:'mt-2'}, s.reasoning)
+                  ),
+                  h('div',{className:'text-right flex flex-col items-end gap-2'},
+                    h('div',{className:'text-xl font-bold brand-blue-text'}, formatOdds(s.odds)),
+                    h('a',{className:'inline-block brand-orange px-3 py-1 rounded text-sm', href:s.betwayLink, target:'_blank'}, "Bet on Betway"),
+                    // Odds Trend Chart
+                    h(LineChart,{width:200,height:80,data:s.oddsTrend.map((v,i)=>({name:i,odds:v}))},
+                      h(XAxis,{hide:true,dataKey:'name'}),
+                      h(YAxis,{hide:true,domain:['dataMin','dataMax']}),
+                      h(Tooltip,{formatter:val=>formatOdds(val)}),
+                      h(Line,{type:'monotone',dataKey:'odds',stroke:'#FF7A00',strokeWidth:2,dot:false}),
+                      h(CartesianGrid,{stroke:'#eee',strokeDasharray:'3 3'})
+                    )
+                  )
+                )
+              )
+            )
+          ),
+          // Right: stats
+          h('aside',{className:'space-y-4'},
+            h('div',{className:'card p-4 bg-white'},
+              h('h4',{className:'font-semibold'}, "Quick Stats"),
+              h('p',{className:'mt-2 text-sm text-gray-700'}, `Total suggestions: `, h('strong',{}, stats.total)),
+              h('p',{className:'text-sm text-gray-700'}, `Avg odds: `, h('strong',{}, stats.avgOdds)),
+              h('p',{className:'text-sm text-gray-700'}, `Odds ≤ 1.20: `, h('strong',{}, stats.profitable))
+            )
+          )
+        ),
+        h('footer',{className:'text-center text-sm text-gray-500 mt-6 mb-6'},
+          h('div',{}, `Data provider: ${API_PROVIDER}. Mock data used.`),
+          h('div',{className:'mt-2'},"Powered by Thuto — use responsibly. Betting involves risk.")
+        )
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    document.addEventListener('DOMContentLoaded',()=>{
+      const root = createRoot(document.getElementById('root'));
+      root.render(h(App));
+    });
   </script>
 </body>
 </html>
+
 
