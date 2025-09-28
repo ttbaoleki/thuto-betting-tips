@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Thuto's Advanced Betting Tips</title>
 
-  <!-- React 18 UMD + client -->
+  <!-- React 18 UMD -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Recharts UMD -->
+  <!-- Recharts -->
   <script src="https://cdn.jsdelivr.net/npm/recharts/umd/Recharts.min.js"></script>
 
   <style>
-    :root{
+    :root {
       --brand-blue: #0B3D91;
       --brand-orange: #FF7A00;
       --muted: #6B7280;
@@ -44,24 +44,24 @@
       { id:3, match:"Real Madrid vs Valencia", league:"La Liga", date:"2025-09-28", time:"20:00", market:"Home Win", odds:1.18, confidence:"High", reasoning:"Real strong at home", betwayLink:"https://www.betway.com", oddsTrend:[1.20,1.19,1.18] },
     ];
 
-    function formatOdds(o){ return Number(o).toFixed(2); }
+    function formatOdds(o) { return Number(o).toFixed(2); }
 
-    function App(){
+    function App() {
       const [suggestions,setSuggestions] = useState(MOCK_SUGGESTIONS);
       const [loading,setLoading] = useState(false);
       const [error,setError] = useState(null);
+
       const [query,setQuery] = useState('');
       const [leagueFilter,setLeagueFilter] = useState('All');
-      const [maxOdds,setMaxOdds] = useState(TARGET_ODDS_MAX);
       const [selectedMarket,setSelectedMarket] = useState('Any');
+      const [maxOdds,setMaxOdds] = useState(TARGET_ODDS_MAX);
 
-      const leagues = useMemo(()=>{
+      const leagues = useMemo(() => {
         const s = new Set(suggestions.map(s=>s.league));
         return ['All', ...Array.from(s)];
-      },[suggestions]);
+      }, [suggestions]);
 
-      // Filtered suggestions
-      const filtered = suggestions.filter(s=>{
+      const filtered = suggestions.filter(s => {
         if(leagueFilter!=='All' && s.league!==leagueFilter) return false;
         if(selectedMarket!=='Any' && !s.market.toLowerCase().includes(selectedMarket.toLowerCase())) return false;
         if(query && !(`${s.match} ${s.league}`).toLowerCase().includes(query.toLowerCase())) return false;
@@ -69,16 +69,16 @@
         return true;
       });
 
-      const stats = useMemo(()=>{
+      const stats = useMemo(() => {
         const total = suggestions.length;
         const avgOdds = suggestions.reduce((a,b)=>a+Number(b.odds||0),0)/Math.max(total,1);
         const profitable = suggestions.filter(s=>Number(s.odds)<=1.2).length;
-        return {total,avgOdds:avgOdds.toFixed(2),profitable};
-      },[suggestions]);
+        return { total, avgOdds:avgOdds.toFixed(2), profitable };
+      }, [suggestions]);
 
-      return h('div',{className:'max-w-6xl mx-auto'},
+      return h('div', {className:'max-w-6xl mx-auto'},
         // Header
-        h('header',{className:'brand-blue p-4 rounded-lg card'},
+        h('header', {className:'brand-blue p-4 rounded-lg card'},
           h('div',{className:'flex items-center justify-between'},
             h('div',{},
               h('h1',{className:'text-2xl font-bold'},"Thuto's Advanced Betting Tips"),
@@ -90,11 +90,11 @@
             )
           )
         ),
-        // Main content
-        h('main',{className:'grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4'},
-          // Left: controls + suggestions
+        // Main
+        h('main', {className:'grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4'},
+          // Left section: controls + suggestions
           h('section',{className:'lg:col-span-2 space-y-4'},
-            // Controls
+            // Filters
             h('div',{className:'card p-4 bg-white'},
               h('div',{className:'flex gap-2 flex-col md:flex-row md:items-center'},
                 h('input',{placeholder:'Search match or team...', className:'flex-1 border p-2 rounded', value:query, onChange:e=>setQuery(e.target.value)}),
@@ -113,43 +113,46 @@
             ),
             // Suggestions
             h('div',{className:'space-y-3'},
-              filtered.length===0 && h('div',{className:'p-4 card bg-white'}, "No suggestions match your filters."),
-              filtered.map(s =>
-                h('div',{key:s.id,className:'p-4 card bg-white flex flex-col md:flex-row justify-between items-start gap-4'},
-                  h('div',{className:'flex-1'},
-                    h('div',{className:'flex items-baseline gap-2'},
-                      h('h3',{className:'text-lg font-semibold'}, s.match),
-                      h('span',{className:'text-sm text-muted'}, s.league)
-                    ),
-                    h('div',{className:'text-sm text-gray-600'}, `${s.date} ${s.time} • ${s.market}`),
-                    h('p',{className:'mt-2'}, s.reasoning)
+              filtered.length===0 && h('div',{className:'p-4 card bg-white'},"No suggestions match your filters."),
+              filtered.map(s => h('div',{key:s.id,className:'p-4 card bg-white flex flex-col md:flex-row justify-between items-start gap-4'},
+                h('div',{className:'flex-1'},
+                  h('div',{className:'flex items-baseline gap-2'},
+                    h('h3',{className:'text-lg font-semibold'}, s.match),
+                    h('span',{className:'text-sm text-muted'}, s.league)
                   ),
-                  h('div',{className:'text-right flex flex-col items-end gap-2'},
-                    h('div',{className:'text-xl font-bold brand-blue-text'}, formatOdds(s.odds)),
-                    h('a',{className:'inline-block brand-orange px-3 py-1 rounded text-sm', href:s.betwayLink, target:'_blank'}, "Bet on Betway"),
-                    // Odds Trend Chart
-                    h(LineChart,{width:200,height:80,data:s.oddsTrend.map((v,i)=>({name:i,odds:v}))},
-                      h(XAxis,{hide:true,dataKey:'name'}),
-                      h(YAxis,{hide:true,domain:['dataMin','dataMax']}),
-                      h(Tooltip,{formatter:val=>formatOdds(val)}),
-                      h(Line,{type:'monotone',dataKey:'odds',stroke:'#FF7A00',strokeWidth:2,dot:false}),
-                      h(CartesianGrid,{stroke:'#eee',strokeDasharray:'3 3'})
-                    )
+                  h('div',{className:'text-sm text-gray-600'}, `${s.date} ${s.time} • ${s.market}`),
+                  h('p',{className:'mt-2'}, s.reasoning)
+                ),
+                h('div',{className:'text-right flex flex-col items-end gap-2'},
+                  h('div',{className:'text-xl font-bold brand-blue-text'}, formatOdds(s.odds)),
+                  h('a',{className:'inline-block brand-orange px-3 py-1 rounded text-sm', href:s.betwayLink, target:'_blank'}, "Bet on Betway"),
+                  h(LineChart,{width:200,height:80,data:s.oddsTrend.map((v,i)=>({name:i,odds:v}))},
+                    h(XAxis,{hide:true,dataKey:'name'}),
+                    h(YAxis,{hide:true,domain:['dataMin','dataMax']}),
+                    h(Tooltip,{formatter:val=>formatOdds(val)}),
+                    h(Line,{type:'monotone',dataKey:'odds',stroke:'#FF7A00',strokeWidth:2,dot:false}),
+                    h(CartesianGrid,{stroke:'#eee',strokeDasharray:'3 3'})
                   )
                 )
-              )
+              ))
             )
           ),
-          // Right: stats
+          // Right section: stats
           h('aside',{className:'space-y-4'},
             h('div',{className:'card p-4 bg-white'},
-              h('h4',{className:'font-semibold'}, "Quick Stats"),
+              h('h4',{className:'font-semibold'},"Quick Stats"),
               h('p',{className:'mt-2 text-sm text-gray-700'}, `Total suggestions: `, h('strong',{}, stats.total)),
               h('p',{className:'text-sm text-gray-700'}, `Avg odds: `, h('strong',{}, stats.avgOdds)),
               h('p',{className:'text-sm text-gray-700'}, `Odds ≤ 1.20: `, h('strong',{}, stats.profitable))
+            ),
+            h('div',{className:'card p-4 bg-white'},
+              h('h4',{className:'font-semibold'},"Share"),
+              h('p',{className:'text-sm text-gray-600'},"Copy this page URL and share with followers."),
+              h('button',{className:'mt-2 border rounded px-3 py-1', onClick:()=>navigator.clipboard?.writeText(window.location.href)}, "Copy Link")
             )
           )
         ),
+        // Footer
         h('footer',{className:'text-center text-sm text-gray-500 mt-6 mb-6'},
           h('div',{}, `Data provider: ${API_PROVIDER}. Mock data used.`),
           h('div',{className:'mt-2'},"Powered by Thuto — use responsibly. Betting involves risk.")
@@ -157,12 +160,13 @@
       );
     }
 
-    document.addEventListener('DOMContentLoaded',()=>{
+    document.addEventListener('DOMContentLoaded', () => {
       const root = createRoot(document.getElementById('root'));
       root.render(h(App));
     });
   </script>
 </body>
 </html>
+
 
 
