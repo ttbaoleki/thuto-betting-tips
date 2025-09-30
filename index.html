@@ -5,140 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thuto's Daily Betting Tips - Betway Botswana</title>
 
-  <!-- Favicon -->
-  <link rel="icon" href="https://betway.co.bw/favicon.ico" type="image/x-icon">
-
-  <!-- Google Fonts (Inter) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <!-- Tailwind CSS CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
   <!-- React + ReactDOM -->
-  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js" crossorigin defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin defer></script>
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin defer></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin defer></script>
 
-  <!-- Babel for JSX (Note: Precompile for production to avoid runtime warning) -->
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.9/babel.min.js" crossorigin defer></script>
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone@7.22.9/babel.min.js" crossorigin defer></script>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 
   <!-- TensorFlow.js for Neural Network -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-
-  <!-- ONNX.js for Transformer Model -->
-  <script src="https://cdn.jsdelivr.net/npm/onnxjs@0.1.11/dist/onnx.min.js" defer></script>
-
-  <!-- Web Worker for AI Agents -->
-  <script src="https://cdn.jsdelivr.net/npm/comlink@4.4.1/dist/umd/comlink.min.js" defer></script>
 </head>
 
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-inter">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
   <div id="root"></div>
 
-  <!-- Fallback for rendering errors -->
-  <div id="fallback" class="hidden text-center p-6 text-red-500 dark:text-red-400"></div>
-
   <script type="text/babel" defer>
-    // IMPORTANT: Run this file using a local server to avoid CORS issues.
-    // Example: `python -m http.server 8000` and open http://localhost:8000
     console.log('Script starting...');
-
-    // Check if critical libraries are loaded
-    if (!window.React || !window.ReactDOM || !window.Babel) {
-      console.error('Critical libraries (React, ReactDOM, or Babel) failed to load.');
-      document.getElementById('fallback').classList.remove('hidden');
-      document.getElementById('fallback').innerHTML = 'Error: Failed to load critical libraries. Please check your network and try again.';
-    }
 
     // Config
     const config = {
-      threshold: 0.65,
+      threshold: 0.6,
       leagues: ["Premier League", "Champions League", "LaLiga", "Bundesliga", "Serie A", "Ligue 1"],
       neural_network: {
-        hidden_layers: [128, 64, 32],
-        epochs: 30,
-        batch_size: 16
+        hidden_layers: [64, 32],
+        epochs: 100,
+        batch_size: 32
       },
-      transformer_model: {
-        url: 'https://example.com/transformer-model.onnx',
-        input_size: 8
-      }
+      max_bet_count: 5 // For responsible gambling agent
     };
 
     // API Key and constants
     const API_KEY = 'YOUR_API_KEY_HERE'; // Replace with valid key from https://the-odds-api.com
     const TARGET_ODDS = 1.20;
-    const BOTSWANA_TZ_OFFSET = 2 * 3600000; // CAT (UTC+2)
+    const BOTSWANA_TZ_OFFSET = 2 * 3600000; // UTC+2 (CAT)
     const BETWAY_BW_BASE = 'https://betway.co.bw/en/sports/football';
     const MARKETS = ['h2h', 'totals', 'spreads', 'handicap'];
 
-    // Sample soccer data
+    // Expanded sample soccer data (20+ matches for better ML training)
     const sampleSoccerData = [
       { date: "2025-08-10", home_team: "Arsenal", away_team: "Everton", home_goals: 2, away_goals: 0, home_points: 3, away_points: 0, league: "Premier League" },
       { date: "2025-08-17", home_team: "Liverpool", away_team: "Manchester United", home_goals: 1, away_goals: 1, home_points: 1, away_points: 1, league: "Premier League" },
       { date: "2025-08-24", home_team: "Chelsea", away_team: "Tottenham", home_goals: 3, away_goals: 2, home_points: 3, away_points: 0, league: "Premier League" },
+      { date: "2025-08-31", home_team: "Manchester City", away_team: "Arsenal", home_goals: 2, away_goals: 1, home_points: 3, away_points: 0, league: "Premier League" },
       { date: "2025-09-07", home_team: "Everton", away_team: "Liverpool", home_goals: 0, away_goals: 4, home_points: 0, away_points: 3, league: "Premier League" },
+      { date: "2025-09-14", home_team: "Manchester United", away_team: "Chelsea", home_goals: 2, away_goals: 2, home_points: 1, away_points: 1, league: "Premier League" },
+      { date: "2025-09-21", home_team: "Tottenham", away_team: "Manchester City", home_goals: 1, away_goals: 3, home_points: 0, away_points: 3, league: "Premier League" },
+      { date: "2025-09-28", home_team: "Arsenal", away_team: "Liverpool", home_goals: 1, away_goals: 0, home_points: 3, away_points: 0, league: "Premier League" },
       { date: "2025-09-14", home_team: "Real Madrid", away_team: "Barcelona", home_goals: 2, away_goals: 1, home_points: 3, away_points: 0, league: "LaLiga" },
+      { date: "2025-09-21", home_team: "Atletico Madrid", away_team: "Sevilla", home_goals: 1, away_goals: 0, home_points: 3, away_points: 0, league: "LaLiga" },
+      { date: "2025-09-28", home_team: "Barcelona", away_team: "Villarreal", home_goals: 3, away_goals: 1, home_points: 3, away_points: 0, league: "LaLiga" },
       { date: "2025-09-21", home_team: "Inter Milan", away_team: "Juventus", home_goals: 1, away_goals: 0, home_points: 3, away_points: 0, league: "Serie A" },
+      { date: "2025-09-28", home_team: "AC Milan", away_team: "Napoli", home_goals: 2, away_goals: 2, home_points: 1, away_points: 1, league: "Serie A" },
       { date: "2025-09-28", home_team: "PSG", away_team: "Monaco", home_goals: 3, away_goals: 1, home_points: 3, away_points: 0, league: "Ligue 1" },
       { date: "2025-09-30", home_team: "Kairat Almaty", away_team: "Real Madrid", home_goals: 0, away_goals: 3, home_points: 0, away_points: 3, league: "Champions League" },
-      { date: "2025-09-30", home_team: "Chelsea", away_team: "Benfica", home_goals: 2, away_goals: 0, home_points: 3, away_points: 0, league: "Champions League" }
-    ];
-
-    // Mock standings
-    const mockStandings = {
-      "Premier League": [
-        { team: "Liverpool", played: 6, won: 5, drawn: 1, lost: 0, gf: 15, ga: 4, gd: 11, pts: 16, form: "W-W-D-W-W-W", xG: 12.5, xGA: 3.5, homeWinRate: 100, awayWinRate: 80 },
-        { team: "Arsenal", played: 6, won: 4, drawn: 2, lost: 0, gf: 13, ga: 3, gd: 10, pts: 14, form: "W-D-W-W-D-W", xG: 11.0, xGA: 2.8, homeWinRate: 80, awayWinRate: 75 },
-        { team: "Chelsea", played: 6, won: 3, drawn: 2, lost: 1, gf: 10, ga: 6, gd: 4, pts: 11, form: "W-D-L-W-D-W", xG: 9.0, xGA: 5.5, homeWinRate: 60, awayWinRate: 55 }
-      ],
-      "Champions League": [
-        { team: "Real Madrid", played: 1, won: 1, drawn: 0, lost: 0, gf: 3, ga: 0, gd: 3, pts: 3, form: "W", xG: 2.5, xGA: 0.5, homeWinRate: 100, awayWinRate: 100 },
-        { team: "Chelsea", played: 1, won: 1, drawn: 0, lost: 0, gf: 2, ga: 0, gd: 2, pts: 3, form: "W", xG: 2.0, xGA: 0.3, homeWinRate: 100, awayWinRate: 100 },
-        { team: "Benfica", played: 1, won: 0, drawn: 1, lost: 0, gf: 1, ga: 1, gd: 0, pts: 1, form: "D", xG: 1.0, xGA: 1.2, homeWinRate: 50, awayWinRate: 50 }
-      ]
-    };
-
-    // Mock suggestions
-    const mockSuggestions = [
-      {
-        id: 1,
-        match: "Kairat Almaty vs Real Madrid",
-        league: "Champions League",
-        date: "2025-09-30",
-        time: "14:45 CAT",
-        market: "Handicap (-2)",
-        odds: 1.15,
-        confidence: "Very High",
-        reasoning: "Real Madrid dominant favorites (xG 2.5). Kairat underdogs. UCL MD2.",
-        form: { home: "L", away: "W", xG: 0.5, xGA: 2.5 },
-        headToHead: "First meeting",
-        injuries: { home: "Several", away: "Squad rotation" },
-        betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
-        winProb: "87%",
-        score: 0.87,
-        countdown: null
-      },
-      {
-        id: 2,
-        match: "Chelsea vs Benfica",
-        league: "Champions League",
-        date: "2025-09-30",
-        time: "17:00 CAT",
-        market: "Handicap (-1)",
-        odds: 1.18,
-        confidence: "High",
-        reasoning: "Chelsea home strong (xG 2.0). Benfica drew. UCL MD2.",
-        form: { home: "W", away: "D", xG: 2.0, xGA: 0.3 },
-        headToHead: "Chelsea won 3/4",
-        injuries: { home: "Squad depth", away: "Defender out" },
-        betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
-        winProb: "85%",
-        score: 0.85,
-        countdown: null
-      }
+      { date: "2025-09-30", home_team: "Chelsea", away_team: "Benfica", home_goals: 2, away_goals: 0, home_points: 3, away_points: 0, league: "Champions League" },
+      { date: "2025-09-30", home_team: "Atalanta", away_team: "Club Brugge", home_goals: 2, away_goals: 1, home_points: 3, away_points: 0, league: "Champions League" },
+      { date: "2025-09-30", home_team: "Atletico Madrid", away_team: "Eintracht Frankfurt", home_goals: 2, away_goals: 1, home_points: 3, away_points: 0, league: "Champions League" },
+      { date: "2025-09-30", home_team: "Bodø/Glimt", away_team: "Tottenham Hotspur", home_goals: 0, away_goals: 1, home_points: 0, away_points: 3, league: "Champions League" },
+      { date: "2025-09-30", home_team: "Anderlecht", away_team: "Paris Saint-Germain", home_goals: 1, away_goals: 3, home_points: 0, away_points: 3, league: "Champions League" },
+      { date: "2025-09-30", home_team: "Bayern Munich", away_team: "Shakhtar Donetsk", home_goals: 4, away_goals: 0, home_points: 3, away_points: 0, league: "Champions League" }
     ];
 
     // Data Preprocessor
@@ -163,105 +94,20 @@
         h2h[key].away_goals.push(match.away_goals);
         match.h2h_home_goals = h2h[key].home_goals.reduce((a, b) => a + b, 0) / h2h[key].home_goals.length || 0;
         match.h2h_away_goals = h2h[key].away_goals.reduce((a, b) => a + b, 0) / h2h[key].away_goals.length || 0;
-
-        match.sentiment_score = Math.random() * 0.2 - 0.1;
-        match.xG_diff = (match.home_goals - match.away_goals) / 2;
       });
 
-      const features = data.map(match => [
-        match.home_form, match.away_form, match.h2h_home_goals, match.h2h_away_goals,
-        match.sentiment_score, match.xG_diff, Math.random() * 0.5, Math.random() * 0.5
-      ]);
+      const features = data.map(match => [match.home_form, match.away_form, match.h2h_home_goals, match.h2h_away_goals]);
       const labels = data.map(match => match.home_goals > match.away_goals ? 1 : 0);
       return { features, labels, processedData: data };
     }
 
-    // AI Agents
-    const DataAgent = {
-      async fetchData(selectedDate) {
-        const cacheKey = `odds_${selectedDate}`;
-        const cached = await getCachedData(cacheKey);
-        if (cached) {
-          console.log('Using cached data for:', selectedDate);
-          return cached;
-        }
-        return mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
-          ...s,
-          time: adjustToCAT(s.date, s.time)
-        }));
-      }
-    };
-
-    const PredictionAgent = {
-      nnModel: null,
-      transformerSession: null,
-      async init() {
-        try {
-          const { features, labels } = preprocessSoccerData(sampleSoccerData);
-          this.nnModel = await trainNeuralNetwork(features, labels);
-          console.log('Neural network initialized');
-          try {
-            this.transformerSession = await onnx.InferenceSession.create(config.transformer_model.url);
-            console.log('Transformer model loaded');
-          } catch (e) {
-            console.warn('Failed to load transformer model:', e.message);
-            this.transformerSession = null;
-          }
-        } catch (e) {
-          console.error('PredictionAgent initialization error:', e);
-          this.nnModel = null;
-        }
-      },
-      async predict(features) {
-        if (!this.nnModel) {
-          console.warn('Neural network model not available, using fallback prediction');
-          return { prob: 0.5, recommendation: 'Model not ready, using default prediction' };
-        }
-        try {
-          const nnPred = await this.nnModel.predict(tf.tensor2d([features])).dataSync()[0];
-          let combinedProb = nnPred;
-          if (this.transformerSession) {
-            const transformerInput = new onnx.Tensor(Float32Array.from(features), 'float32', [1, config.transformer_model.input_size]);
-            const transformerPred = await this.transformerSession.run({ input: transformerInput });
-            combinedProb = (nnPred * 0.4 + transformerPred.output.data[0] * 0.6);
-          }
-          return {
-            prob: combinedProb,
-            recommendation: combinedProb > config.threshold ? 'Bet on home team' : 'No strong bet'
-          };
-        } catch (e) {
-          console.error('Prediction error:', e);
-          return { prob: 0.5, recommendation: 'Prediction failed, check console' };
-        }
-      }
-    };
-
-    const RecommendationAgent = {
-      async generate(suggestions, standings, userPrefs) {
-        const scored = await Promise.all(suggestions.map(async s => ({
-          ...s,
-          score: await calculateBetScore(s, standings, userPrefs)
-        })));
-        return scored.filter(s => s.score > config.threshold).sort((a, b) => b.score - a.score);
-      }
-    };
-
-    const ValidationAgent = {
-      async validate(suggestions, liveOdds) {
-        return suggestions.filter(s => {
-          const oddsDiff = Math.abs(s.odds - (liveOdds[s.match]?.odds || s.odds));
-          return oddsDiff < 0.1 && s.score > config.threshold;
-        });
-      }
-    };
-
     // Neural Network Training
+    let nnModel = null;
     async function trainNeuralNetwork(features, labels) {
       try {
         const model = tf.sequential();
-        model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[0], inputShape: [8], activation: 'relu' }));
+        model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[0], inputShape: [4], activation: 'relu' }));
         model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[1], activation: 'relu' }));
-        model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[2], activation: 'relu' }));
         model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
         model.compile({ loss: 'binaryCrossentropy', optimizer: 'adam', metrics: ['accuracy'] });
 
@@ -277,47 +123,169 @@
       }
     }
 
-    // Cache with IndexedDB
-    async function getCachedData(key) {
-      return new Promise(resolve => {
-        const request = indexedDB.open('ThutoDB', 1);
-        request.onupgradeneeded = e => {
-          e.target.result.createObjectStore('cache');
+    // Train model on load
+    (async () => {
+      const { features, labels } = preprocessSoccerData(sampleSoccerData);
+      nnModel = await trainNeuralNetwork(features, labels);
+      console.log('Neural Network trained');
+    })();
+
+    // Predict function
+    async function predictMatch(homeTeam, awayTeam, league, standings) {
+      try {
+        if (!nnModel) throw new Error('Model not trained');
+        const leagueStandings = standings[league] || [];
+        const homeData = leagueStandings.find(t => t.team === homeTeam) || { homeWinRate: 50 };
+        const awayData = leagueStandings.find(t => t.team === awayTeam) || { awayWinRate: 50 };
+
+        const features = [
+          homeData.homeWinRate / 100 || 0.5,
+          awayData.awayWinRate / 100 || 0.5,
+          1.0,
+          1.0
+        ];
+
+        const pred = await nnModel.predict(tf.tensor2d([features])).dataSync()[0];
+        const recommendation = pred > config.threshold ? `Bet on ${homeTeam} to win` : 'No strong bet recommendation';
+        return {
+          homeWinProb: (pred * 100).toFixed(0) + '%',
+          recommendation
         };
-        request.onsuccess = e => {
-          const db = e.target.result;
-          const tx = db.transaction('cache', 'readonly').objectStore('cache').get(key);
-          tx.onsuccess = () => resolve(tx.result || null);
-        };
-      });
+      } catch (e) {
+        console.error('Prediction Error:', e);
+        return { homeWinProb: 'N/A', recommendation: 'Prediction failed' };
+      }
     }
 
-    async function setCachedData(key, data) {
-      return new Promise(resolve => {
-        const request = indexedDB.open('ThutoDB', 1);
-        request.onupgradeneeded = e => {
-          e.target.result.createObjectStore('cache');
-        };
-        request.onsuccess = e => {
-          const db = e.target.result;
-          db.transaction('cache', 'readwrite').objectStore('cache').put(data, key);
-          resolve();
-        };
-      });
+    // Monte Carlo Bet Optimization Agent (new)
+    function monteCarloBetOptimization(suggestions, numSimulations = 1000) {
+      const bestSlips = [];
+      for (let i = 0; i < numSimulations; i++) {
+        const numLegs = Math.floor(Math.random() * 3) + 2;
+        const legs = suggestions.sort(() => Math.random() - 0.5).slice(0, numLegs);
+        const totalOdds = legs.reduce((acc, leg) => acc * leg.odds, 1).toFixed(2);
+        const winProb = legs.reduce((acc, leg) => acc * parseFloat(leg.winProb.replace('%', '')) / 100, 1) * 100;
+        const roi = (totalOdds - 1) * winProb / 100;
+        if (totalOdds <= 1.20 && winProb >= 85) {
+          bestSlips.push({ id: i + 1, legs, totalOdds, winProb: winProb.toFixed(0) + '%', roi });
+        }
+      }
+      return bestSlips.sort((a, b) => b.roi - a.roi).slice(0, 5);
     }
+
+    // Cache functions
+    function getCachedData(key) {
+      try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+      } catch (e) {
+        console.error('Cache get error:', e);
+        return null;
+      }
+    }
+
+    function setCachedData(key, data) {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (e) {
+        console.error('Cache set error:', e);
+      }
+    }
+
+    // Mock standings (abbreviated)
+    const mockStandings = {
+      "Premier League": [
+        { team: "Liverpool", played: 6, won: 5, drawn: 1, lost: 0, gf: 15, ga: 4, gd: 11, pts: 16, form: "W-W-D-W-W-W", xG: 12.5, xGA: 3.5, homeWinRate: 100, awayWinRate: 80 },
+        { team: "Arsenal", played: 6, won: 4, drawn: 2, lost: 0, gf: 13, ga: 3, gd: 10, pts: 14, form: "W-D-W-W-D-W", xG: 11.0, xGA: 2.8, homeWinRate: 80, awayWinRate: 75 },
+        { team: "Chelsea", played: 6, won: 3, drawn: 2, lost: 1, gf: 10, ga: 6, gd: 4, pts: 11, form: "W-D-L-W-D-W", xG: 9.0, xGA: 5.5, homeWinRate: 60, awayWinRate: 55 }
+      ],
+      "Champions League": [
+        { team: "Real Madrid", played: 1, won: 1, drawn: 0, lost: 0, gf: 3, ga: 0, gd: 3, pts: 3, form: "W", xG: 2.5, xGA: 0.5, homeWinRate: 100, awayWinRate: 100 },
+        { team: "Chelsea", played: 1, won: 1, drawn: 0, lost: 0, gf: 2, ga: 0, gd: 2, pts: 3, form: "W", xG: 2.0, xGA: 0.3, homeWinRate: 100, awayWinRate: 100 },
+        { team: "Atalanta", played: 1, won: 1, drawn: 0, lost: 0, gf: 2, ga: 1, gd: 1, pts: 3, form: "W", xG: 1.2, xGA: 1.0, homeWinRate: 100, awayWinRate: 50 }
+      ]
+    };
+
+    // Mock suggestions (accurate CAT times for Sep 30, 2025)
+    const mockSuggestions = [
+      {
+        id: 1,
+        match: "Atalanta vs Club Brugge",
+        league: "Champions League",
+        date: "2025-09-30",
+        time: "17:45 CAT",
+        market: "Handicap (-1)",
+        odds: 1.15,
+        confidence: "High",
+        reasoning: "Atalanta strong home form (xG 1.2). UCL MD2.",
+        form: { home: "W", away: "D", xG: 1.2, xGA: 1.0 },
+        headToHead: "First meeting",
+        injuries: { home: "None", away: "Minor" },
+        betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
+        winProb: "85%",
+        score: 0.85
+      },
+      {
+        id: 2,
+        match: "Kairat Almaty vs Real Madrid",
+        league: "Champions League",
+        date: "2025-09-30",
+        time: "17:45 CAT",
+        market: "Over 2.5 Goals",
+        odds: 1.12,
+        confidence: "Very High",
+        reasoning: "Real Madrid attacking strength (xG 2.5). UCL MD2.",
+        form: { home: "L", away: "W", xG: 0.5, xGA: 2.5 },
+        headToHead: "First meeting",
+        injuries: { home: "Several", away: "Rotation" },
+        betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
+        winProb: "88%",
+        score: 0.88
+      },
+      {
+        id: 3,
+        match: "Atletico Madrid vs Eintracht Frankfurt",
+        league: "Champions League",
+        date: "2025-09-30",
+        time: "21:00 CAT",
+        market: "1X",
+        odds: 1.10,
+        confidence: "Very High",
+        reasoning: "Atletico home favorite (xG 1.8). UCL MD2.",
+        form: { home: "W", away: "D", xG: 1.8, xGA: 0.8 },
+        headToHead: "Atletico won last 2",
+        injuries: { home: "None", away: "Key forward" },
+        betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
+        winProb: "90%",
+        score: 0.90
+      },
+      {
+        id: 4,
+        match: "Chelsea vs Benfica",
+        league: "Champions League",
+        date: "2025-09-30",
+        time: "21:00 CAT",
+        market: "Handicap (-1)",
+        odds: 1.18,
+        confidence: "High",
+        reasoning: "Chelsea home strong (xG 2.0). UCL MD2.",
+        form: { home: "W", away: "D", xG: 2.0, xGA: 0.3 },
+        headToHead: "Chelsea won 3/4",
+        injuries: { home: "Squad depth", away: "Defender out" },
+        betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
+        winProb: "85%",
+        score: 0.85
+      }
+    ];
 
     // Calculate bet score
-    async function calculateBetScore(suggestion, standings, userPrefs = { risk: 'medium' }) {
+    async function calculateBetScore(suggestion, standings) {
       try {
         const [homeTeam, awayTeam] = suggestion.match.split(' vs ');
-        const prediction = await PredictionAgent.predict([
-          standings[suggestion.league]?.find(t => t.team === homeTeam)?.homeWinRate / 100 || 0.5,
-          standings[suggestion.league]?.find(t => t.team === awayTeam)?.awayWinRate / 100 || 0.5,
-          1.0, 1.0, Math.random() * 0.2 - 0.1, 0.5, 0.5, 0.5
-        ]);
-        const riskFactor = userPrefs.risk === 'low' ? 0.8 : userPrefs.risk === 'high' ? 1.2 : 1.0;
+        const prediction = await predictMatch(homeTeam, awayTeam, suggestion.league, standings);
+        const mlProb = parseFloat(prediction.homeWinProb) / 100 || 0.7;
         const ruleScore = (suggestion.form.xG > 1.5 ? 0.3 : 0) + (suggestion.headToHead.includes('won') ? 0.2 : 0.1) + (suggestion.odds < 1.10 ? 0.1 : 0.05);
-        return (prediction.prob * 0.7 * riskFactor + ruleScore * 0.3).toFixed(2);
+        return (mlProb * 0.7 + ruleScore * 0.3).toFixed(2);
       } catch (e) {
         console.error('Bet Score Error:', e);
         return 0.7;
@@ -325,35 +293,24 @@
     }
 
     // Generate slips
-    async function generateSlips(suggestions, standings, userPrefs, numSlips = 50) {
+    async function generateSlips(suggestions, standings, numSlips = 50) {
       try {
-        const scoredSuggestions = await RecommendationAgent.generate(suggestions, standings, userPrefs);
-        const validated = await ValidationAgent.validate(scoredSuggestions, {});
-        const filtered = validated
+        const scoredSuggestions = await Promise.all(
+          suggestions.map(async s => ({
+            ...s,
+            score: await calculateBetScore(s, standings)
+          }))
+        );
+        const filtered = scoredSuggestions
           .filter(s => (s.market.includes('1X') || s.market.includes('Handicap') || (s.market.includes('Over') && s.form.xG > 1.5)) && s.score > config.threshold)
           .sort((a, b) => b.score - a.score);
-        const slips = [];
-        for (let i = 0; i < numSlips; i++) {
-          const numLegs = Math.floor(Math.random() * 3) + 2;
-          const legs = filtered.slice(0, numLegs);
-          const totalOdds = legs.reduce((acc, leg) => acc * leg.odds, 1).toFixed(2);
-          const totalProb = (legs.reduce((acc, leg) => acc * parseFloat(leg.winProb.replace('%', '')) / 100, 1) * 100).toFixed(0) + "%";
-          if (parseFloat(totalOdds) <= 1.20 && parseFloat(totalProb) >= 85) {
-            slips.push({
-              id: i + 1,
-              legs,
-              totalOdds,
-              winProb: totalProb,
-              reasoning: `AI-enhanced ${numLegs}-leg multi (score >${config.threshold}): ~${totalProb} win chance.`
-            });
-          }
-        }
-        return slips.length ? slips : [{
+        const monteCarloSlips = monteCarloBetOptimization(filtered);
+        return monteCarloSlips.length ? monteCarloSlips : [{
           id: 1,
           legs: filtered.slice(0, 2),
           totalOdds: "1.20",
           winProb: "85%",
-          reasoning: "Fallback: AI-enhanced high-probability bets."
+          reasoning: "Fallback: ML-enhanced high-probability bets."
         }];
       } catch (e) {
         console.error('Slip Generation Error:', e);
@@ -370,17 +327,14 @@
     // Fetch real suggestions
     async function fetchRealSuggestions(selectedDate) {
       const cacheKey = `odds_${selectedDate}`;
-      const cached = await getCachedData(cacheKey);
+      const cached = getCachedData(cacheKey);
       if (cached) {
         console.log('Using cached data for:', selectedDate);
         return cached;
       }
       if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
         console.warn('No API key. Using mock data.');
-        return mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
-          ...s,
-          time: adjustToCAT(s.date, s.time)
-        }));
+        return mockSuggestions.filter(s => s.date === selectedDate);
       }
       try {
         const controller = new AbortController();
@@ -412,87 +366,69 @@
                     market: `${bestMarket.key} (${outcome.name})`,
                     odds: outcome.price.toFixed(2),
                     confidence: outcome.price < 1.10 ? 'Very High' : 'High',
-                    reasoning: `Live Betway BW odds via The Odds API. AI-enhanced.`,
+                    reasoning: `Live Betway BW odds via The Odds API. ML-enhanced.`,
                     form: { home: "N/A", away: "N/A", xG: "N/A", xGA: "N/A" },
                     headToHead: "N/A",
                     injuries: { home: "N/A", away: "N/A" },
                     betwayLink: `${BETWAY_BW_BASE}/${sport.replace('soccer_', '')}`,
                     winProb: (1 / outcome.price * 100).toFixed(0) + "%",
-                    score: 0.7,
-                    countdown: null
+                    score: 0.7
                   });
                 }
               }
             }
           });
         }
-        await setCachedData(cacheKey, suggestions);
+        setCachedData(cacheKey, suggestions);
         console.log('Fetched suggestions:', suggestions);
-        return suggestions.length ? suggestions : mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
-          ...s,
-          time: adjustToCAT(s.date, s.time)
-        }));
+        return suggestions.length ? suggestions : mockSuggestions.filter(s => s.date === selectedDate);
       } catch (error) {
         console.error('API Error:', error.message);
-        return mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
-          ...s,
-          time: adjustToCAT(s.date, s.time)
-        }));
+        return mockSuggestions.filter(s => s.date === selectedDate);
       }
     }
 
-    // Time Zone Adjustment
-    function adjustToCAT(dateStr, timeStr) {
-      try {
-        const [hours, minutes] = timeStr.replace(' CAT', '').split(':').map(Number);
-        const date = new Date(`${dateStr}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00Z`);
-        const catTime = new Date(date.getTime() + BOTSWANA_TZ_OFFSET);
-        return catTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " CAT";
-      } catch (e) {
-        console.error('Time Adjustment Error:', e);
-        return timeStr;
-      }
+    // Sentiment Agent (mock, expandable with RapidAPI)
+    async function getSentiment(match) {
+      return `Mock sentiment for ${match}: 80% positive for home team based on recent X posts.`;
+      // TODO: Integrate RapidAPI Twitter endpoint
     }
 
-    // Countdown Timer
-    function startCountdown(suggestion) {
-      const [hours, minutes] = suggestion.time.replace(' CAT', '').split(':').map(Number);
-      const matchTime = new Date(`${suggestion.date}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`);
+    // Notification Agent
+    function scheduleNotification(match, time) {
+      const matchTime = new Date(`${match.date}T${time.replace(' CAT', '')}:00`);
       const now = new Date();
-      const diff = matchTime - now;
-      if (diff <= 0) return "Match Started";
-      const hoursLeft = Math.floor(diff / 3600000);
-      const minutesLeft = Math.floor((diff % 3600000) / 60000);
-      return `${hoursLeft}h ${minutesLeft}m`;
+      const timeToMatch = matchTime - now - 30 * 60 * 1000; // 30 mins before
+      if (timeToMatch > 0 && Notification.permission === 'granted') {
+        setTimeout(() => {
+          new Notification(`Thuto's Betting Tips: ${match.match} starts in 30 mins!`, {
+            body: `Place your bet on ${match.market} @ ${match.odds} now!`
+          });
+        }, timeToMatch);
+      }
+    }
+
+    // Responsible Gambling Agent
+    function checkBettingLimit() {
+      const betsToday = JSON.parse(localStorage.getItem('bets_today') || '[]');
+      const today = new Date().toISOString().split('T')[0];
+      const todayBets = betsToday.filter(b => b.date === today);
+      if (todayBets.length >= config.max_bet_count) {
+        alert(`Warning: You've placed ${todayBets.length} bets today. Consider taking a break.`);
+        return false;
+      }
+      return true;
     }
 
     // Error Boundary
     class ErrorBoundary extends React.Component {
-      state = { error: null, errorInfo: null };
+      state = { error: null };
       static getDerivedStateFromError(error) {
-        console.error('ErrorBoundary caught error:', error);
+        console.error('ErrorBoundary:', error);
         return { error };
       }
-      componentDidCatch(error, errorInfo) {
-        console.error('ErrorBoundary error details:', error, errorInfo);
-        this.setState({ error, errorInfo });
-      }
       render() {
-        if (this.state.error) {
-          return (
-            <div className="p-6 text-center text-red-500 dark:text-red-400 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold">Something went wrong</h2>
-              <p>Error: {this.state.error.message}</p>
-              <p>Please check the console (F12) for details or try refreshing the page.</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
-              >
-                Refresh Page
-              </button>
-            </div>
-          );
-        }
+        if (this.state.error) return <div className="p-4 text-center text-red-500 dark:text-red-400">Error: {this.state.error.message}. Check console (F12).</div>;
         return this.props.children;
       }
     }
@@ -510,48 +446,23 @@
       const [homeTeam, setHomeTeam] = React.useState('');
       const [awayTeam, setAwayTeam] = React.useState('');
       const [prediction, setPrediction] = React.useState(null);
-      const [userPrefs, setUserPrefs] = React.useState({ risk: 'medium', favoriteTeams: [] });
-      const [sortConfig, setSortConfig] = React.useState({ key: 'pts', direction: 'desc' });
+      const [sentiment, setSentiment] = React.useState({});
       const validDates = ['2025-09-30', '2025-10-28'];
 
       React.useEffect(() => {
-        console.log('Toggling dark mode:', darkMode);
         document.body.classList.toggle('dark', darkMode);
       }, [darkMode]);
 
       React.useEffect(() => {
-        console.log('Loading data for date:', selectedDate);
+        Notification.requestPermission();
         const loadData = async () => {
-          try {
-            setLoading(true);
-            await PredictionAgent.init();
-            const data = await DataAgent.fetchData(selectedDate);
-            const updatedSuggestions = data.map(s => ({
-              ...s,
-              countdown: startCountdown(s)
-            }));
-            setSuggestions(updatedSuggestions);
-            const generatedSlips = await generateSlips(updatedSuggestions, standings, userPrefs);
-            setSlips(generatedSlips);
-            console.log('Data loaded successfully');
-          } catch (e) {
-            console.error('LoadData error:', e);
-            setSuggestions(mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
-              ...s,
-              time: adjustToCAT(s.date, s.time),
-              countdown: startCountdown(s)
-            })));
-            setSlips([{
-              id: 1,
-              legs: mockSuggestions.slice(0, 2),
-              totalOdds: "1.20",
-              winProb: "85%",
-              reasoning: "Error fallback: High-probability bets."
-            }]);
-          } finally {
-            setLoading(false);
-            console.log('Loading state cleared');
-          }
+          setLoading(true);
+          const data = await fetchRealSuggestions(selectedDate);
+          setSuggestions(data);
+          data.forEach(s => scheduleNotification(s, s.time));
+          const generatedSlips = await generateSlips(data, standings);
+          setSlips(generatedSlips);
+          setLoading(false);
         };
         loadData();
       }, [selectedDate]);
@@ -559,7 +470,6 @@
       React.useEffect(() => {
         const ctx = document.getElementById('performanceChart')?.getContext('2d');
         if (ctx) {
-          console.log('Initializing Chart.js');
           new Chart(ctx, {
             type: 'line',
             data: {
@@ -579,32 +489,8 @@
               plugins: { legend: { display: false } }
             }
           });
-        } else {
-          console.warn('Chart.js canvas not found');
         }
       }, []);
-
-      React.useEffect(() => {
-        console.log('Setting up notification interval');
-        const interval = setInterval(() => {
-          setSuggestions(prev => prev.map(s => ({
-            ...s,
-            countdown: startCountdown(s)
-          })));
-          const highConfidence = suggestions.find(s => parseFloat(s.score) > 0.85 && s.countdown !== 'Match Started');
-          if (highConfidence && Notification.permission === 'granted') {
-            console.log('Sending notification for:', highConfidence.match);
-            new Notification(`High Confidence Bet: ${highConfidence.match}`, {
-              body: `${highConfidence.reasoning} (Score: ${highConfidence.score})`,
-              icon: 'https://betway.co.bw/favicon.ico'
-            });
-          }
-        }, 60000);
-        return () => {
-          console.log('Clearing notification interval');
-          clearInterval(interval);
-        };
-      }, [suggestions]);
 
       const filteredSuggestions = suggestions.filter(s =>
         (selectedLeague === 'All' || s.league === selectedLeague) &&
@@ -629,366 +515,254 @@
           console.error('Sort Error:', e);
         }
       };
+      const [sortConfig, setSortConfig] = React.useState({ key: 'pts', direction: 'desc' });
 
       const handlePredict = async () => {
         if (!homeTeam || !awayTeam || !selectedLeague) {
           setPrediction({ homeWinProb: 'N/A', recommendation: 'Please fill all fields' });
           return;
         }
-        const result = await PredictionAgent.predict([
-          standings[selectedLeague]?.find(t => t.team === homeTeam)?.homeWinRate / 100 || 0.5,
-          standings[selectedLeague]?.find(t => t.team === awayTeam)?.awayWinRate / 100 || 0.5,
-          1.0, 1.0, Math.random() * 0.2 - 0.1, 0.5, 0.5, 0.5
-        ]);
-        setPrediction({
-          homeWinProb: (result.prob * 100).toFixed(0) + '%',
-          recommendation: result.recommendation
-        });
+        const result = await predictMatch(homeTeam, awayTeam, selectedLeague, standings);
+        setPrediction(result);
       };
 
-      const requestNotificationPermission = async () => {
-        if (Notification.permission !== 'granted') {
-          await Notification.requestPermission();
+      const handleGetSentiment = async (id, match) => {
+        const result = await getSentiment(match);
+        setSentiment(prev => ({ ...prev, [id]: result }));
+      };
+
+      const handleRetrain = async () => {
+        setLoading(true);
+        const { features, labels } = preprocessSoccerData(sampleSoccerData);
+        nnModel = await trainNeuralNetwork(features, labels);
+        const data = await fetchRealSuggestions(selectedDate);
+        setSuggestions(data);
+        const generatedSlips = await generateSlips(data, standings);
+        setSlips(generatedSlips);
+        setLoading(false);
+      };
+
+      const handleBetClick = (suggestion) => {
+        if (checkBettingLimit()) {
+          const betsToday = JSON.parse(localStorage.getItem('bets_today') || '[]');
+          betsToday.push({ date: new Date().toISOString().split('T')[0], match: suggestion.match });
+          localStorage.setItem('bets_today', JSON.stringify(betsToday));
+          window.open(suggestion.betwayLink, '_blank');
         }
       };
 
-      if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-green-500"></div>
-          <p className="mt-4 text-lg font-medium text-gray-600 dark:text-gray-300">Loading matches for {selectedDate}...</p>
-        </div>
-      );
+      if (loading) return <div className="text-center p-8 text-lg text-gray-500 dark:text-gray-400">Loading matches for {selectedDate}...</div>;
 
       return (
         <ErrorBoundary>
-          <div className="min-h-screen">
-            {/* Sticky Header */}
-            <header className="sticky top-0 z-50 bg-gradient-to-r from-blue-900 to-blue-800 dark:from-blue-800 dark:to-blue-700 shadow-lg">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <img src="https://betway.co.bw/favicon.ico" alt="Betway Logo" className="h-10 w-10" />
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white">Thuto's Betting Tips</h1>
-                    <p className="text-sm text-gray-200">AI-Powered Bets for {selectedDate} (CAT, UTC+2)</p>
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    min="2025-09-01"
-                    max="2025-12-31"
-                    onChange={e => setSelectedDate(e.target.value)}
-                    className="p-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition"
-                    aria-label="Select date"
-                  />
-                  <select
-                    value={selectedLeague}
-                    onChange={e => setSelectedLeague(e.target.value)}
-                    className="p-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition"
-                    aria-label="Select league"
-                  >
-                    {['All', ...config.leagues].map(league => (
-                      <option key={league} value={league}>{league}</option>
-                    ))}
-                  </select>
-                  <input
-                    placeholder="Search matches, leagues, markets..."
-                    className="p-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    aria-label="Search matches"
-                  />
-                  <button
-                    onClick={() => {
-                      setLoading(true);
-                      fetchRealSuggestions(selectedDate).then(d => {
-                        const updated = d.map(s => ({
-                          ...s,
-                          countdown: startCountdown(s)
-                        }));
-                        setSuggestions(updated);
-                        generateSlips(updated, standings, userPrefs).then(s => {
-                          setSlips(s);
-                          setLoading(false);
-                        });
+          <div className="min-h-screen p-4">
+            <header className="bg-blue-900 dark:bg-blue-800 p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-white">Thuto's Daily Betting Tips - Betway Botswana</h1>
+                <p className="text-sm text-gray-300">AI-enhanced bets for {selectedDate} (CAT, UTC+2)</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  min="2025-09-01"
+                  max="2025-12-31"
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+                />
+                <select
+                  value={selectedLeague}
+                  onChange={e => setSelectedLeague(e.target.value)}
+                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+                >
+                  {['All', ...config.leagues].map(league => (
+                    <option key={league} value={league}>{league}</option>
+                  ))}
+                </select>
+                <input
+                  placeholder="Search matches, leagues, markets..."
+                  className="flex-1 p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+                <button
+                  onClick={() => {
+                    setLoading(true);
+                    fetchRealSuggestions(selectedDate).then(d => {
+                      setSuggestions(d);
+                      d.forEach(s => scheduleNotification(s, s.time));
+                      generateSlips(d, standings).then(s => {
+                        setSlips(s);
+                        setLoading(false);
                       });
-                    }}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition transform hover:scale-105"
-                    aria-label="Refresh live data"
-                  >
-                    Refresh
-                  </button>
-                  <button
-                    onClick={() => setDarkMode(!darkMode)}
-                    className="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg transition transform hover:scale-105"
-                    aria-label="Toggle dark mode"
-                  >
-                    {darkMode ? '☀️ Light' : '🌙 Dark'}
-                  </button>
-                  <button
-                    onClick={requestNotificationPermission}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition transform hover:scale-105"
-                    aria-label="Enable notifications"
-                  >
-                    🔔 Notify
-                  </button>
-                </div>
+                    });
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-base sm:text-lg"
+                >
+                  Refresh Live
+                </button>
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded text-base sm:text-lg"
+                >
+                  {darkMode ? '☀️ Light' : '🌙 Dark'}
+                </button>
+                <button
+                  onClick={handleRetrain}
+                  className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded text-base sm:text-lg"
+                >
+                  Retrain Model
+                </button>
               </div>
             </header>
 
-            {/* Hero Section */}
-            <section className="bg-gradient-to-r from-green-500 to-green-600 text-white py-12 px-4 sm:px-6 lg:px-8">
-              <div className="max-w-7xl mx-auto text-center">
-                <h2 className="text-3xl sm:text-4xl font-bold">Win Big with AI-Powered Betting Tips</h2>
-                <p className="mt-2 text-lg">Get high-probability football bets tailored for Betway Botswana</p>
-                <a
-                  href={BETWAY_BW_BASE}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-block bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105"
-                  aria-label="Visit Betway Botswana"
+            <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+              <h2 className="text-2xl font-semibold dark:text-white">Predict Match Outcome</h2>
+              <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                <select
+                  value={selectedLeague}
+                  onChange={e => setSelectedLeague(e.target.value)}
+                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
                 >
-                  Bet Now
-                </a>
+                  <option value="">Select League</option>
+                  {config.leagues.map(league => (
+                    <option key={league} value={league}>{league}</option>
+                  ))}
+                </select>
+                <input
+                  placeholder="Home Team"
+                  value={homeTeam}
+                  onChange={e => setHomeTeam(e.target.value)}
+                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+                />
+                <input
+                  placeholder="Away Team"
+                  value={awayTeam}
+                  onChange={e => setAwayTeam(e.target.value)}
+                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+                />
+                <button
+                  onClick={handlePredict}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  Predict
+                </button>
               </div>
+              {prediction && (
+                <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-700 rounded">
+                  <p className="dark:text-white">Prediction: {prediction.recommendation}</p>
+                  <p className="dark:text-white">Home Win Probability: {prediction.homeWinProb}</p>
+                </div>
+              )}
             </section>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              {/* User Preferences */}
-              <section className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-8 animate-fade-in">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Customize Your Bets</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <select
-                    value={userPrefs.risk}
-                    onChange={e => setUserPrefs({ ...userPrefs, risk: e.target.value })}
-                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
-                    aria-label="Select risk level"
-                  >
-                    <option value="low">Low Risk</option>
-                    <option value="medium">Medium Risk</option>
-                    <option value="high">High Risk</option>
-                  </select>
-                  <input
-                    placeholder="Favorite Teams (comma-separated)"
-                    value={userPrefs.favoriteTeams.join(',')}
-                    onChange={e => setUserPrefs({ ...userPrefs, favoriteTeams: e.target.value.split(',').map(t => t.trim()) })}
-                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
-                    aria-label="Enter favorite teams"
-                  />
-                </div>
-              </section>
-
-              {/* Custom Prediction Input */}
-              <section className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-8 animate-fade-in">
-                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Predict Match Outcome</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
-                  <select
-                    value={selectedLeague}
-                    onChange={e => setSelectedLeague(e.target.value)}
-                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
-                    aria-label="Select league for prediction"
-                  >
-                    <option value="">Select League</option>
-                    {config.leagues.map(league => (
-                      <option key={league} value={league}>{league}</option>
-                    ))}
-                  </select>
-                  <input
-                    placeholder="Home Team"
-                    value={homeTeam}
-                    onChange={e => setHomeTeam(e.target.value)}
-                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
-                    aria-label="Enter home team"
-                  />
-                  <input
-                    placeholder="Away Team"
-                    value={awayTeam}
-                    onChange={e => setAwayTeam(e.target.value)}
-                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
-                    aria-label="Enter away team"
-                  />
-                  <button
-                    onClick={handlePredict}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition transform hover:scale-105"
-                    aria-label="Predict match outcome"
-                  >
-                    Predict
-                  </button>
-                </div>
-                {prediction && (
-                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="text-gray-900 dark:text-white font-medium">Prediction: {prediction.recommendation}</p>
-                    <p className="text-gray-900 dark:text-white">Home Win Probability: {prediction.homeWinProb}</p>
-                  </div>
-                )}
-              </section>
-
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <main className="lg:col-span-3 space-y-8">
-                  {/* Safe Single Bets */}
-                  <section className="animate-fade-in">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Safe Single Bets</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">High-probability bets powered by AI</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredSuggestions.length > 0 ? filteredSuggestions.map(sug => (
-                        <div
-                          key={sug.id}
-                          className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-transform transform hover:scale-[1.02] animate-fade-in"
-                        >
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">{sug.match}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{sug.league} • {sug.date} {sug.time} • Starts in: {sug.countdown}</p>
-                          <p className="font-semibold text-gray-900 dark:text-white mt-2">
-                            Market: <span className="text-yellow-500">{sug.market}</span> @ {sug.odds} • Prob: {sug.winProb} ({sug.confidence}) • Score: {sug.score}
-                          </p>
-                          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{sug.reasoning}</p>
-                          <details className="mt-2 text-sm">
-                            <summary className="text-blue-500 dark:text-blue-400 cursor-pointer hover:underline">View Stats</summary>
-                            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg mt-1">
-                              <p className="text-gray-900 dark:text-white">Form: Home {sug.form.home} (xG {sug.form.xG}), Away {sug.form.away} (xGA {sug.form.xGA})</p>
-                              <p className="text-gray-900 dark:text-white">H2H: {sug.headToHead}</p>
-                              <p className="text-gray-900 dark:text-white">Injuries: Home {sug.injuries.home}, Away {sug.injuries.away}</p>
-                            </div>
-                          </details>
-                          <a
-                            href={sug.betwayLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-3 inline-block bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold transition transform hover:scale-105"
-                            aria-label={`Bet on ${sug.match} at Betway`}
-                          >
-                            Bet Now
-                          </a>
-                        </div>
-                      )) : (
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center text-gray-600 dark:text-gray-400">
-                          No matches for {selectedDate}. Try another date or league.
-                        </div>
-                      )}
-                    </div>
-                  </section>
-
-                  {/* Multi-Team Slips */}
-                  <section className="animate-fade-in">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Multi-Team Slips (~1.20 Odds)</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">AI-enhanced 2-4 leg betting combinations</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {slips.slice(0, 10).map(slip => (
-                        <div
-                          key={slip.id}
-                          className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-transform transform hover:scale-[1.02] animate-fade-in"
-                        >
-                          <h3 className="font-bold text-gray-900 dark:text-white">Slip #{slip.id} • Odds: {slip.totalOdds} • Win Prob: {slip.winProb}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">{slip.reasoning}</p>
-                          <ul className="text-sm mt-2 space-y-1 text-gray-600 dark:text-gray-300">
-                            {slip.legs.map((leg, i) => (
-                              <li key={i}>• {leg.match} ({leg.league}): {leg.market} @ {leg.odds} ({leg.winProb}, Score: {leg.score})</li>
-                            ))}
-                          </ul>
-                          <a
-                            href={BETWAY_BW_BASE}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-3 inline-block bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold transition transform hover:scale-105"
-                            aria-label={`Build slip ${slip.id} on Betway`}
-                          >
-                            Build Slip
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                </main>
-
-                <aside className="space-y-6">
-                  {/* Performance Tracker */}
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Performance Tracker</h3>
-                    <canvas id="performanceChart" height="200"></canvas>
-                    <p className="text-sm mt-4 text-center text-gray-600 dark:text-gray-400">AI-enhanced win rate (Updated Sep 30, 2025)</p>
-                  </div>
-
-                  {/* League Standings (Mobile) */}
-                  <details className="lg:hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in">
-                    <summary className="font-semibold text-lg text-blue-900 dark:text-blue-300 cursor-pointer">League Standings</summary>
-                    <div className="mt-4 overflow-x-auto">
-                      {Object.entries(standings).map(([league, table]) => (
-                        <details key={league} className="mb-4">
-                          <summary className="font-semibold text-lg text-blue-900 dark:text-blue-300 cursor-pointer">{league}</summary>
-                          <div className="mt-2">
-                            <table className="w-full text-xs border-collapse">
-                              <thead>
-                                <tr className="bg-blue-900 dark:bg-blue-800 text-white">
-                                  <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')} aria-label="Sort by team">Team</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')} aria-label="Sort by played">P</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')} aria-label="Sort by won">W</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')} aria-label="Sort by drawn">D</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')} aria-label="Sort by lost">L</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')} aria-label="Sort by goals for">GF</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')} aria-label="Sort by goals against">GA</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')} aria-label="Sort by goal difference">GD</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')} aria-label="Sort by points">Pts</th>
-                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')} aria-label="Sort by home win rate">Home %</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {table.map((row, i) => (
-                                  <tr key={i} className="border-b border-gray-200 dark:border-gray-600">
-                                    <td className="p-2 text-left font-medium text-gray-900 dark:text-white">{row.team}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.played}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.won}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.drawn}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.lost}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.gf}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.ga}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.gd}</td>
-                                    <td className="p-2 font-bold text-yellow-500 dark:text-yellow-400">{row.pts}</td>
-                                    <td className="p-2 text-gray-900 dark:text-white">{row.homeWinRate}%</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <main className="lg:col-span-2 space-y-6">
+                <section>
+                  <h2 className="text-2xl font-semibold dark:text-white">Safe Single Bets (CAT Time)</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI-enhanced high-probability bets</p>
+                  <div className="space-y-4">
+                    {filteredSuggestions.length > 0 ? filteredSuggestions.map(sug => (
+                      <div key={sug.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-green-500 hover:shadow-lg transition-shadow">
+                        <h3 className="text-xl font-bold dark:text-white">{sug.match}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{sug.league} • {sug.date} {sug.time}</p>
+                        <p className="font-semibold dark:text-white">Market: <span className="text-yellow-500">{sug.market}</span> @ {sug.odds} • Prob: {sug.winProb} ({sug.confidence}) • Score: {sug.score}</p>
+                        <p className="mt-2 text-sm dark:text-gray-300">{sug.reasoning}</p>
+                        <details className="mt-2 text-sm">
+                          <summary className="text-blue-500 dark:text-blue-400 cursor-pointer">View Stats</summary>
+                          <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded mt-1">
+                            <p className="dark:text-white">Form: Home {sug.form.home} (xG {sug.form.xG}), Away {sug.form.away} (xGA {sug.form.xGA})</p>
+                            <p className="dark:text-white">H2H: {sug.headToHead}</p>
+                            <p className="dark:text-white">Injuries: Home {sug.injuries.home}, Away {sug.injuries.away}</p>
                           </div>
                         </details>
-                      ))}
-                    </div>
-                  </details>
+                        <button
+                          onClick={() => handleGetSentiment(sug.id, sug.match)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mt-2 mr-2"
+                        >
+                          Get X Sentiment
+                        </button>
+                        <a
+                          href={sug.betwayLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => handleBetClick(sug)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded mt-2 inline-block text-base sm:text-lg"
+                        >
+                          Bet on Betway BW
+                        </a>
+                        {sentiment[sug.id] && <p className="mt-2 text-sm dark:text-gray-300">{sentiment[sug.id]}</p>}
+                      </div>
+                    )) : (
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <p className="text-center text-gray-500 dark:text-gray-400">No matches for {selectedDate}. Check league filter.</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
 
-                  {/* League Standings (Desktop) */}
-                  <div className="hidden lg:block bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in overflow-x-auto">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">League Standings</h3>
+                <section>
+                  <h2 className="text-2xl font-semibold dark:text-white">Multi-Team Slips (~1.20 Odds)</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI-optimized 2-4 leg combos</p>
+                  <div className="space-y-4">
+                    {slips.slice(0, 10).map(slip => (
+                      <div key={slip.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+                        <h3 className="font-bold dark:text-white">Slip #{slip.id} • Odds: {slip.totalOdds} • Win Prob: {slip.winProb} • ROI: {(slip.roi * 100).toFixed(1)}%</h3>
+                        <p className="text-sm dark:text-gray-300">{slip.reasoning}</p>
+                        <ul className="text-xs mt-2 space-y-1 dark:text-gray-300">
+                          {slip.legs.map((leg, i) => (
+                            <li key={i}>• {leg.match} ({leg.league}): {leg.market} @ {leg.odds} ({leg.winProb}, Score: {leg.score})</li>
+                          ))}
+                        </ul>
+                        <a href={BETWAY_BW_BASE} target="_blank" rel="noopener noreferrer" className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded mt-2 inline-block text-base sm:text-lg">Build Slip on Betway BW</a>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </main>
+
+              <aside className="space-y-6">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-semibold mb-4 dark:text-white">Performance Tracker</h3>
+                  <canvas id="performanceChart" height="200"></canvas>
+                  <p className="text-sm mt-4 text-center text-gray-500 dark:text-gray-400">AI-enhanced win rate (Updated Sep 30, 2025)</p>
+                </div>
+
+                <details className="lg:hidden">
+                  <summary className="font-semibold cursor-pointer text-lg text-blue-900 dark:text-blue-300">League Standings</summary>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mt-2 overflow-x-auto">
                     {Object.entries(standings).map(([league, table]) => (
                       <details key={league} className="mb-4">
-                        <summary className="font-semibold text-lg text-blue-900 dark:text-blue-300 cursor-pointer">{league}</summary>
+                        <summary className="font-semibold cursor-pointer text-lg text-blue-900 dark:text-blue-300">{league}</summary>
                         <div className="mt-2">
-                          <table className="w-full text-sm border-collapse">
+                          <table className="w-full text-xs border-collapse">
                             <thead>
                               <tr className="bg-blue-900 dark:bg-blue-800 text-white">
-                                <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')} aria-label="Sort by team">Team</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')} aria-label="Sort by played">P</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')} aria-label="Sort by won">W</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')} aria-label="Sort by drawn">D</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')} aria-label="Sort by lost">L</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')} aria-label="Sort by goals for">GF</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')} aria-label="Sort by goals against">GA</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')} aria-label="Sort by goal difference">GD</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')} aria-label="Sort by points">Pts</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')} aria-label="Sort by home win rate">Home %</th>
+                                <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')}>Team</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')}>P</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')}>W</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')}>D</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')}>L</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')}>GF</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')}>GA</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')}>GD</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')}>Pts</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')}>Home %</th>
                               </tr>
                             </thead>
                             <tbody>
                               {table.map((row, i) => (
-                                <tr key={i} className="border-b border-gray-200 dark:border-gray-600">
-                                  <td className="p-2 text-left font-medium text-gray-900 dark:text-white">{row.team}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.played}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.won}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.drawn}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.lost}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.gf}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.ga}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.gd}</td>
+                                <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
+                                  <td className="p-2 text-left font-medium dark:text-white">{row.team}</td>
+                                  <td className="p-2 dark:text-white">{row.played}</td>
+                                  <td className="p-2 dark:text-white">{row.won}</td>
+                                  <td className="p-2 dark:text-white">{row.drawn}</td>
+                                  <td className="p-2 dark:text-white">{row.lost}</td>
+                                  <td className="p-2 dark:text-white">{row.gf}</td>
+                                  <td className="p-2 dark:text-white">{row.ga}</td>
+                                  <td className="p-2 dark:text-white">{row.gd}</td>
                                   <td className="p-2 font-bold text-yellow-500 dark:text-yellow-400">{row.pts}</td>
-                                  <td className="p-2 text-gray-900 dark:text-white">{row.homeWinRate}%</td>
+                                  <td className="p-2 dark:text-white">{row.homeWinRate}%</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -997,31 +771,64 @@
                       </details>
                     ))}
                   </div>
+                </details>
 
-                  {/* Data Sources */}
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Data Sources</h3>
-                    <ul className="space-y-2 text-sm">
-                      <li><a href="https://www.sofascore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Sofascore</a></li>
-                      <li><a href="https://www.flashscore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Flashscore</a></li>
-                      <li><a href="https://www.soccer24.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Soccer24</a></li>
-                    </ul>
-                  </div>
-
-                  {/* Disclaimer */}
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-200 dark:border-yellow-800 animate-fade-in">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">⚠️ AI-enhanced bets for Sep 30, 2025. Replace API key for live odds. Gamble responsibly 18+.</p>
-                  </div>
-                </aside>
-              </div>
-
-              {/* Footer */}
-              <footer className="bg-blue-900 dark:bg-blue-800 text-white py-6 mt-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                  <p className="text-sm">Powered by Thuto's AI Betting Engine | <a href="https://betway.co.bw" target="_blank" rel="noopener" className="text-yellow-400 hover:underline">Betway Botswana</a></p>
-                  <p className="text-xs mt-2">© 2025 Thuto's Betting Tips. All rights reserved.</p>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hidden lg:block overflow-x-auto">
+                  <h3 className="text-xl font-semibold mb-4 dark:text-white">League Standings</h3>
+                  {Object.entries(standings).map(([league, table]) => (
+                    <details key={league} className="mb-4">
+                      <summary className="font-semibold cursor-pointer text-lg text-blue-900 dark:text-blue-300">{league}</summary>
+                      <div className="mt-2">
+                        <table className="w-full text-sm border-collapse">
+                          <thead>
+                            <tr className="bg-blue-900 dark:bg-blue-800 text-white">
+                              <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')}>Team</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')}>P</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')}>W</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')}>D</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')}>L</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')}>GF</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')}>GA</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')}>GD</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')}>Pts</th>
+                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')}>Home %</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {table.map((row, i) => (
+                              <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
+                                <td className="p-2 text-left font-medium dark:text-white">{row.team}</td>
+                                <td className="p-2 dark:text-white">{row.played}</td>
+                                <td className="p-2 dark:text-white">{row.won}</td>
+                                <td className="p-2 dark:text-white">{row.drawn}</td>
+                                <td className="p-2 dark:text-white">{row.lost}</td>
+                                <td className="p-2 dark:text-white">{row.gf}</td>
+                                <td className="p-2 dark:text-white">{row.ga}</td>
+                                <td className="p-2 dark:text-white">{row.gd}</td>
+                                <td className="p-2 font-bold text-yellow-500 dark:text-yellow-400">{row.pts}</td>
+                                <td className="p-2 dark:text-white">{row.homeWinRate}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+                  ))}
                 </div>
-              </footer>
+
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-semibold mb-4 dark:text-white">Data Sources</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><a href="https://www.sofascore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Sofascore</a></li>
+                    <li><a href="https://www.flashscore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Flashscore</a></li>
+                    <li><a href="https://www.soccer24.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Soccer24</a></li>
+                  </ul>
+                </div>
+
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">⚠️ AI-enhanced bets for Sep 30, 2025. Replace API key for live odds. Gamble responsibly 18+.</p>
+                </div>
+              </aside>
             </div>
           </div>
         </ErrorBoundary>
@@ -1030,22 +837,19 @@
 
     // Render App
     try {
-      console.log('Checking for root element...');
-      const rootElement = document.getElementById('root');
-      if (!rootElement) {
-        console.error('Root element not found');
-        document.getElementById('fallback').classList.remove('hidden');
-        document.getElementById('fallback').innerHTML = 'Error: Root element not found. Please check the HTML structure.';
-        throw new Error('Root element not found');
-      }
       console.log('Attempting to render app...');
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(<App />);
-      console.log('App rendered successfully');
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+        console.log('App rendered successfully');
+      } else {
+        console.error('Root element not found');
+        document.body.innerHTML = '<div class="text-center p-4 text-red-500 dark:text-red-400">Error: Root element not found.</div>';
+      }
     } catch (err) {
       console.error('Render error:', err);
-      document.getElementById('fallback').classList.remove('hidden');
-      document.getElementById('fallback').innerHTML = `Render Error: ${err.message}. Check console (F12) for details or try refreshing the page.`;
+      document.body.innerHTML = '<div class="text-center p-4 text-red-500 dark:text-red-400">Render Error: ' + err.message + '. Check console (F12).</div>';
     }
   </script>
 
@@ -1056,31 +860,20 @@
       --brand-gold-text: #FFD700;
       --muted-gray: #6B7280;
     }
-    body {
-      font-family: 'Inter', sans-serif;
-    }
     .dark { color: #F9FAFB; }
     .bg-blue-900 { background-color: var(--brand-dark-blue); }
     .bg-green-500 { background-color: var(--brand-green); }
     .bg-green-500:hover { background-color: #218838; }
     .text-yellow-500 { color: var(--brand-gold-text); }
-    .text-gray-600 { color: var(--muted-gray); }
-    .dark .bg-gray-50 { background-color: #1F2937; }
+    .text-gray-500 { color: var(--muted-gray); }
+    .dark .bg-gray-100 { background-color: #374151 !important; }
     .dark .text-gray-300 { color: #D1D5DB; }
-    .dark .border-gray-300 { border-color: #4B5563; }
+    .dark .border-gray-200 { border-color: #4B5563; }
     table th:hover { background-color: #2D4B5B; }
     .dark table th:hover { background-color: #4B5563; }
     @media (max-width: 640px) {
       table { font-size: 0.75rem; }
-      table th, table td { padding: 0.5rem; }
-    }
-    /* Custom Animations */
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-      animation: fade-in 0.5s ease-out;
+      table th, table td { padding: 0.25rem; }
     }
   </style>
 </body>
