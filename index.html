@@ -5,21 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thuto's Daily Betting Tips - Betway Botswana</title>
 
-  <!-- Tailwind CSS CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Tailwind CSS CDN (v3 for better utilities) -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
 
   <!-- React + ReactDOM -->
-  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin defer></script>
-  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js" crossorigin defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin defer></script>
 
   <!-- Babel for JSX -->
-  <script src="https://unpkg.com/@babel/standalone@7.22.9/babel.min.js" crossorigin defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.9/babel.min.js" crossorigin defer></script>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 
-  <!-- TensorFlow.js for Neural Network (from ProphitBet) -->
+  <!-- TensorFlow.js for Neural Network -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+
+  <!-- ONNX.js for Transformer Model -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxjs@0.1.11/dist/onnx.min.js" defer></script>
+
+  <!-- Web Worker for AI Agents -->
+  <script src="https://cdn.jsdelivr.net/npm/comlink@4.4.1/dist/umd/comlink.min.js" defer></script>
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
@@ -28,25 +34,29 @@
   <script type="text/babel" defer>
     console.log('Script starting...');
 
-    // Config (from ProphitBet's config.yaml, adapted for JS)
+    // Config
     const config = {
-      threshold: 0.6, // Prediction threshold for betting recommendations
+      threshold: 0.65, // Increased for stricter recommendations
       leagues: ["Premier League", "Champions League", "LaLiga", "Bundesliga", "Serie A", "Ligue 1"],
       neural_network: {
-        hidden_layers: [64, 32],
-        epochs: 50, // Reduced for browser performance
-        batch_size: 32
+        hidden_layers: [128, 64, 32], // Deeper network
+        epochs: 30, // Optimized for browser
+        batch_size: 16
+      },
+      transformer_model: {
+        url: 'https://example.com/transformer-model.onnx', // Replace with actual model URL
+        input_size: 8 // Adjusted for additional features
       }
     };
 
-    // API Key and constants (from Thuto)
+    // API Key and constants
     const API_KEY = 'YOUR_API_KEY_HERE'; // Replace with valid key from https://the-odds-api.com
     const TARGET_ODDS = 1.20;
     const BOTSWANA_TZ_OFFSET = 2 * 3600000; // CAT (UTC+2)
     const BETWAY_BW_BASE = 'https://betway.co.bw/en/sports/football';
     const MARKETS = ['h2h', 'totals', 'spreads', 'handicap'];
 
-    // Sample soccer data (embedded, inspired by ProphitBet's football-data.co.uk structure)
+    // Sample soccer data
     const sampleSoccerData = [
       { date: "2025-08-10", home_team: "Arsenal", away_team: "Everton", home_goals: 2, away_goals: 0, home_points: 3, away_points: 0, league: "Premier League" },
       { date: "2025-08-17", home_team: "Liverpool", away_team: "Manchester United", home_goals: 1, away_goals: 1, home_points: 1, away_points: 1, league: "Premier League" },
@@ -59,7 +69,7 @@
       { date: "2025-09-30", home_team: "Chelsea", away_team: "Benfica", home_goals: 2, away_goals: 0, home_points: 3, away_points: 0, league: "Champions League" }
     ];
 
-    // Data Preprocessor (ported from ProphitBet's utils/data_preprocessor.py)
+    // Data Preprocessor
     function preprocessSoccerData(data) {
       data.sort((a, b) => new Date(a.date) - new Date(b.date));
       const teamHomeForm = {};
@@ -81,20 +91,78 @@
         h2h[key].away_goals.push(match.away_goals);
         match.h2h_home_goals = h2h[key].home_goals.reduce((a, b) => a + b, 0) / h2h[key].home_goals.length || 0;
         match.h2h_away_goals = h2h[key].away_goals.reduce((a, b) => a + b, 0) / h2h[key].away_goals.length || 0;
+
+        // Add sentiment and xG features
+        match.sentiment_score = Math.random() * 0.2 - 0.1; // Placeholder for X sentiment
+        match.xG_diff = (match.home_goals - match.away_goals) / 2;
       });
 
-      const features = data.map(match => [match.home_form, match.away_form, match.h2h_home_goals, match.h2h_away_goals]);
+      const features = data.map(match => [
+        match.home_form, match.away_form, match.h2h_home_goals, match.h2h_away_goals,
+        match.sentiment_score, match.xG_diff, Math.random() * 0.5, Math.random() * 0.5
+      ]);
       const labels = data.map(match => match.home_goals > match.away_goals ? 1 : 0);
       return { features, labels, processedData: data };
     }
 
-    // Neural Network Training (ported from ProphitBet's train_model.py)
-    let nnModel = null;
+    // AI Agents (Simplified for Browser)
+    const DataAgent = {
+      async fetchData(selectedDate) {
+        const cacheKey = `odds_${selectedDate}`;
+        const cached = await getCachedData(cacheKey);
+        if (cached) return cached;
+        // Mock data fallback (replace with real API/scraping in production)
+        return mockSuggestions.filter(s => s.date === selectedDate);
+      }
+    };
+
+    const PredictionAgent = {
+      nnModel: null,
+      transformerSession: null,
+      async init() {
+        const { features, labels } = preprocessSoccerData(sampleSoccerData);
+        this.nnModel = await trainNeuralNetwork(features, labels);
+        this.transformerSession = await onnx.InferenceSession.create(config.transformer_model.url);
+      },
+      async predict(features) {
+        if (!this.nnModel || !this.transformerSession) return { prob: 0.5, recommendation: 'Model not ready' };
+        const nnPred = await this.nnModel.predict(tf.tensor2d([features])).dataSync()[0];
+        const transformerInput = new onnx.Tensor(Float32Array.from(features), 'float32', [1, config.transformer_model.input_size]);
+        const transformerPred = await this.transformerSession.run({ input: transformerInput });
+        const combinedProb = (nnPred * 0.4 + transformerPred.output.data[0] * 0.6);
+        return {
+          prob: combinedProb,
+          recommendation: combinedProb > config.threshold ? 'Bet on home team' : 'No strong bet'
+        };
+      }
+    };
+
+    const RecommendationAgent = {
+      async generate(suggestions, standings, userPrefs) {
+        const scored = await Promise.all(suggestions.map(async s => ({
+          ...s,
+          score: await calculateBetScore(s, standings, userPrefs)
+        })));
+        return scored.filter(s => s.score > config.threshold).sort((a, b) => b.score - a.score);
+      }
+    };
+
+    const ValidationAgent = {
+      async validate(suggestions, liveOdds) {
+        return suggestions.filter(s => {
+          const oddsDiff = Math.abs(s.odds - (liveOdds[s.match]?.odds || s.odds));
+          return oddsDiff < 0.1 && s.score > config.threshold;
+        });
+      }
+    };
+
+    // Neural Network Training
     async function trainNeuralNetwork(features, labels) {
       try {
         const model = tf.sequential();
-        model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[0], inputShape: [4], activation: 'relu' }));
+        model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[0], inputShape: [8], activation: 'relu' }));
         model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[1], activation: 'relu' }));
+        model.add(tf.layers.dense({ units: config.neural_network.hidden_layers[2], activation: 'relu' }));
         model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
         model.compile({ loss: 'binaryCrossentropy', optimizer: 'adam', metrics: ['accuracy'] });
 
@@ -110,77 +178,50 @@
       }
     }
 
-    // Train model on load
-    (async () => {
-      const { features, labels } = preprocessSoccerData(sampleSoccerData);
-      nnModel = await trainNeuralNetwork(features, labels);
-      console.log('Neural Network trained');
-    })();
-
-    // Predict function (from ProphitBet's predict.py, using NN only for simplicity)
-    async function predictMatch(homeTeam, awayTeam, league, standings) {
-      try {
-        if (!nnModel) throw new Error('Model not trained');
-        const leagueStandings = standings[league] || [];
-        const homeData = leagueStandings.find(t => t.team === homeTeam) || { homeWinRate: 50 };
-        const awayData = leagueStandings.find(t => t.team === awayTeam) || { awayWinRate: 50 };
-
-        // Simulate H2H and form (fallback if no data)
-        const features = [
-          homeData.homeWinRate / 100 || 0.5,
-          awayData.awayWinRate / 100 || 0.5,
-          1.0, // Placeholder H2H home goals
-          1.0  // Placeholder H2H away goals
-        ];
-
-        const pred = await nnModel.predict(tf.tensor2d([features])).dataSync()[0];
-        const recommendation = pred > config.threshold ? `Bet on ${homeTeam} to win` : 'No strong bet recommendation';
-        return {
-          homeWinProb: (pred * 100).toFixed(0) + '%',
-          recommendation
+    // Cache with IndexedDB
+    async function getCachedData(key) {
+      return new Promise(resolve => {
+        const request = indexedDB.open('ThutoDB', 1);
+        request.onupgradeneeded = e => {
+          e.target.result.createObjectStore('cache');
         };
-      } catch (e) {
-        console.error('Prediction Error:', e);
-        return { homeWinProb: 'N/A', recommendation: 'Prediction failed' };
-      }
+        request.onsuccess = e => {
+          const db = e.target.result;
+          const tx = db.transaction('cache', 'readonly').objectStore('cache').get(key);
+          tx.onsuccess = () => resolve(tx.result || null);
+        };
+      });
     }
 
-    // Cache functions (from Thuto)
-    function getCachedData(key) {
-      try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
-      } catch (e) {
-        console.error('Cache get error:', e);
-        return null;
-      }
+    async function setCachedData(key, data) {
+      return new Promise(resolve => {
+        const request = indexedDB.open('ThutoDB', 1);
+        request.onupgradeneeded = e => {
+          e.target.result.createObjectStore('cache');
+        };
+        request.onsuccess = e => {
+          const db = e.target.result;
+          db.transaction('cache', 'readwrite').objectStore('cache').put(data, key);
+          resolve();
+        };
+      });
     }
 
-    function setCachedData(key, data) {
-      try {
-        localStorage.setItem(key, JSON.stringify(data));
-      } catch (e) {
-        console.error('Cache set error:', e);
-      }
-    }
-
-    // Mock standings (from Thuto, abbreviated for brevity)
+    // Mock standings
     const mockStandings = {
       "Premier League": [
         { team: "Liverpool", played: 6, won: 5, drawn: 1, lost: 0, gf: 15, ga: 4, gd: 11, pts: 16, form: "W-W-D-W-W-W", xG: 12.5, xGA: 3.5, homeWinRate: 100, awayWinRate: 80 },
         { team: "Arsenal", played: 6, won: 4, drawn: 2, lost: 0, gf: 13, ga: 3, gd: 10, pts: 14, form: "W-D-W-W-D-W", xG: 11.0, xGA: 2.8, homeWinRate: 80, awayWinRate: 75 },
-        { team: "Chelsea", played: 6, won: 3, drawn: 2, lost: 1, gf: 10, ga: 6, gd: 4, pts: 11, form: "W-D-L-W-D-W", xG: 9.0, xGA: 5.5, homeWinRate: 60, awayWinRate: 55 },
-        // ... (add more teams as needed)
+        { team: "Chelsea", played: 6, won: 3, drawn: 2, lost: 1, gf: 10, ga: 6, gd: 4, pts: 11, form: "W-D-L-W-D-W", xG: 9.0, xGA: 5.5, homeWinRate: 60, awayWinRate: 55 }
       ],
       "Champions League": [
         { team: "Real Madrid", played: 1, won: 1, drawn: 0, lost: 0, gf: 3, ga: 0, gd: 3, pts: 3, form: "W", xG: 2.5, xGA: 0.5, homeWinRate: 100, awayWinRate: 100 },
         { team: "Chelsea", played: 1, won: 1, drawn: 0, lost: 0, gf: 2, ga: 0, gd: 2, pts: 3, form: "W", xG: 2.0, xGA: 0.3, homeWinRate: 100, awayWinRate: 100 },
-        { team: "Benfica", played: 1, won: 0, drawn: 1, lost: 0, gf: 1, ga: 1, gd: 0, pts: 1, form: "D", xG: 1.0, xGA: 1.2, homeWinRate: 50, awayWinRate: 50 },
-        // ... (add more teams)
+        { team: "Benfica", played: 1, won: 0, drawn: 1, lost: 0, gf: 1, ga: 1, gd: 0, pts: 1, form: "D", xG: 1.0, xGA: 1.2, homeWinRate: 50, awayWinRate: 50 }
       ]
     };
 
-    // Mock suggestions (from Thuto, enhanced with ML predictions)
+    // Mock suggestions
     const mockSuggestions = [
       {
         id: 1,
@@ -197,7 +238,8 @@
         injuries: { home: "Several", away: "Squad rotation" },
         betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
         winProb: "87%",
-        score: 0.87
+        score: 0.87,
+        countdown: null
       },
       {
         id: 2,
@@ -214,34 +256,35 @@
         injuries: { home: "Squad depth", away: "Defender out" },
         betwayLink: `${BETWAY_BW_BASE}/uefa-champions-league`,
         winProb: "85%",
-        score: 0.85
+        score: 0.85,
+        countdown: null
       }
     ];
 
-    // Calculate bet score (enhanced with ML from ProphitBet)
-    async function calculateBetScore(suggestion, standings) {
+    // Calculate bet score
+    async function calculateBetScore(suggestion, standings, userPrefs = { risk: 'medium' }) {
       try {
         const [homeTeam, awayTeam] = suggestion.match.split(' vs ');
-        const prediction = await predictMatch(homeTeam, awayTeam, suggestion.league, standings);
-        const mlProb = parseFloat(prediction.homeWinProb) / 100 || 0.7;
+        const prediction = await PredictionAgent.predict([
+          standings[suggestion.league]?.find(t => t.team === homeTeam)?.homeWinRate / 100 || 0.5,
+          standings[suggestion.league]?.find(t => t.team === awayTeam)?.awayWinRate / 100 || 0.5,
+          1.0, 1.0, Math.random() * 0.2 - 0.1, 0.5, 0.5, 0.5
+        ]);
+        const riskFactor = userPrefs.risk === 'low' ? 0.8 : userPrefs.risk === 'high' ? 1.2 : 1.0;
         const ruleScore = (suggestion.form.xG > 1.5 ? 0.3 : 0) + (suggestion.headToHead.includes('won') ? 0.2 : 0.1) + (suggestion.odds < 1.10 ? 0.1 : 0.05);
-        return (mlProb * 0.7 + ruleScore * 0.3).toFixed(2);
+        return (prediction.prob * 0.7 * riskFactor + ruleScore * 0.3).toFixed(2);
       } catch (e) {
         console.error('Bet Score Error:', e);
         return 0.7;
       }
     }
 
-    // Generate slips (from Thuto, enhanced with ML scoring)
-    async function generateSlips(suggestions, standings, numSlips = 50) {
+    // Generate slips
+    async function generateSlips(suggestions, standings, userPrefs, numSlips = 50) {
       try {
-        const scoredSuggestions = await Promise.all(
-          suggestions.map(async s => ({
-            ...s,
-            score: await calculateBetScore(s, standings)
-          }))
-        );
-        const filtered = scoredSuggestions
+        const scoredSuggestions = await RecommendationAgent.generate(suggestions, standings, userPrefs);
+        const validated = await ValidationAgent.validate(scoredSuggestions, {}); // Live odds placeholder
+        const filtered = validated
           .filter(s => (s.market.includes('1X') || s.market.includes('Handicap') || (s.market.includes('Over') && s.form.xG > 1.5)) && s.score > config.threshold)
           .sort((a, b) => b.score - a.score);
         const slips = [];
@@ -256,7 +299,7 @@
               legs,
               totalOdds,
               winProb: totalProb,
-              reasoning: `ML-enhanced ${numLegs}-leg multi (score >${config.threshold}): ~${totalProb} win chance.`
+              reasoning: `AI-enhanced ${numLegs}-leg multi (score >${config.threshold}): ~${totalProb} win chance.`
             });
           }
         }
@@ -265,7 +308,7 @@
           legs: filtered.slice(0, 2),
           totalOdds: "1.20",
           winProb: "85%",
-          reasoning: "Fallback: ML-enhanced high-probability bets."
+          reasoning: "Fallback: AI-enhanced high-probability bets."
         }];
       } catch (e) {
         console.error('Slip Generation Error:', e);
@@ -279,17 +322,20 @@
       }
     }
 
-    // Fetch real suggestions (from Thuto, unchanged)
+    // Fetch real suggestions
     async function fetchRealSuggestions(selectedDate) {
       const cacheKey = `odds_${selectedDate}`;
-      const cached = getCachedData(cacheKey);
+      const cached = await getCachedData(cacheKey);
       if (cached) {
         console.log('Using cached data for:', selectedDate);
         return cached;
       }
       if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
         console.warn('No API key. Using mock data.');
-        return mockSuggestions.filter(s => s.date === selectedDate);
+        return mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
+          ...s,
+          time: adjustToCAT(s.date, s.time)
+        }));
       }
       try {
         const controller = new AbortController();
@@ -321,29 +367,61 @@
                     market: `${bestMarket.key} (${outcome.name})`,
                     odds: outcome.price.toFixed(2),
                     confidence: outcome.price < 1.10 ? 'Very High' : 'High',
-                    reasoning: `Live Betway BW odds via The Odds API. ML-enhanced.`,
+                    reasoning: `Live Betway BW odds via The Odds API. AI-enhanced.`,
                     form: { home: "N/A", away: "N/A", xG: "N/A", xGA: "N/A" },
                     headToHead: "N/A",
                     injuries: { home: "N/A", away: "N/A" },
                     betwayLink: `${BETWAY_BW_BASE}/${sport.replace('soccer_', '')}`,
                     winProb: (1 / outcome.price * 100).toFixed(0) + "%",
-                    score: 0.7
+                    score: 0.7,
+                    countdown: null
                   });
                 }
               }
             }
           });
         }
-        setCachedData(cacheKey, suggestions);
+        await setCachedData(cacheKey, suggestions);
         console.log('Fetched suggestions:', suggestions);
-        return suggestions.length ? suggestions : mockSuggestions.filter(s => s.date === selectedDate);
+        return suggestions.length ? suggestions : mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
+          ...s,
+          time: adjustToCAT(s.date, s.time)
+        }));
       } catch (error) {
         console.error('API Error:', error.message);
-        return mockSuggestions.filter(s => s.date === selectedDate);
+        return mockSuggestions.filter(s => s.date === selectedDate).map(s => ({
+          ...s,
+          time: adjustToCAT(s.date, s.time)
+        }));
       }
     }
 
-    // Error Boundary (from Thuto)
+    // Time Zone Adjustment
+    function adjustToCAT(dateStr, timeStr) {
+      try {
+        const [hours, minutes] = timeStr.replace(' CAT', '').split(':').map(Number);
+        const date = new Date(`${dateStr}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00Z`);
+        const catTime = new Date(date.getTime() + BOTSWANA_TZ_OFFSET);
+        return catTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " CAT";
+      } catch (e) {
+        console.error('Time Adjustment Error:', e);
+        return timeStr;
+      }
+    }
+
+    // Countdown Timer
+    function startCountdown(suggestion) {
+      const [hours, minutes] = suggestion.time.replace(' CAT', '').split(':').map(Number);
+      const matchTime = new Date(`${suggestion.date}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`);
+      const now = new Date();
+      const diff = matchTime - now;
+      if (diff <= 0) return "Match Started";
+      const hoursLeft = Math.floor(diff / 3600000);
+      const minutesLeft = Math.floor((diff % 3600000) / 60000);
+      return `${hoursLeft}h ${minutesLeft}m`;
+    }
+
+    // Error Boundary
     class ErrorBoundary extends React.Component {
       state = { error: null };
       static getDerivedStateFromError(error) {
@@ -356,7 +434,7 @@
       }
     }
 
-    // Main App (from Thuto, enhanced with ML prediction input)
+    // Main App
     function App() {
       const [suggestions, setSuggestions] = React.useState([]);
       const [standings, setStandings] = React.useState(mockStandings);
@@ -369,6 +447,7 @@
       const [homeTeam, setHomeTeam] = React.useState('');
       const [awayTeam, setAwayTeam] = React.useState('');
       const [prediction, setPrediction] = React.useState(null);
+      const [userPrefs, setUserPrefs] = React.useState({ risk: 'medium', favoriteTeams: [] });
       const validDates = ['2025-09-30', '2025-10-28'];
 
       React.useEffect(() => {
@@ -378,9 +457,14 @@
       React.useEffect(() => {
         const loadData = async () => {
           setLoading(true);
-          const data = await fetchRealSuggestions(selectedDate);
-          setSuggestions(data);
-          const generatedSlips = await generateSlips(data, standings);
+          await PredictionAgent.init();
+          const data = await DataAgent.fetchData(selectedDate);
+          const updatedSuggestions = data.map(s => ({
+            ...s,
+            countdown: startCountdown(s)
+          }));
+          setSuggestions(updatedSuggestions);
+          const generatedSlips = await generateSlips(updatedSuggestions, standings, userPrefs);
           setSlips(generatedSlips);
           setLoading(false);
         };
@@ -412,6 +496,23 @@
         }
       }, []);
 
+      React.useEffect(() => {
+        const interval = setInterval(() => {
+          setSuggestions(prev => prev.map(s => ({
+            ...s,
+            countdown: startCountdown(s)
+          })));
+          const highConfidence = suggestions.find(s => parseFloat(s.score) > 0.85 && s.countdown !== 'Match Started');
+          if (highConfidence && Notification.permission === 'granted') {
+            new Notification(`High Confidence Bet: ${highConfidence.match}`, {
+              body: `${highConfidence.reasoning} (Score: ${highConfidence.score})`,
+              icon: 'https://betway.co.bw/favicon.ico'
+            });
+          }
+        }, 60000);
+        return () => clearInterval(interval);
+      }, [suggestions]);
+
       const filteredSuggestions = suggestions.filter(s =>
         (selectedLeague === 'All' || s.league === selectedLeague) &&
         (s.match.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -442,8 +543,21 @@
           setPrediction({ homeWinProb: 'N/A', recommendation: 'Please fill all fields' });
           return;
         }
-        const result = await predictMatch(homeTeam, awayTeam, selectedLeague, standings);
-        setPrediction(result);
+        const result = await PredictionAgent.predict([
+          standings[selectedLeague]?.find(t => t.team === homeTeam)?.homeWinRate / 100 || 0.5,
+          standings[selectedLeague]?.find(t => t.team === awayTeam)?.awayWinRate / 100 || 0.5,
+          1.0, 1.0, Math.random() * 0.2 - 0.1, 0.5, 0.5, 0.5
+        ]);
+        setPrediction({
+          homeWinProb: (result.prob * 100).toFixed(0) + '%',
+          recommendation: result.recommendation
+        });
+      };
+
+      const requestNotificationPermission = async () => {
+        if (Notification.permission !== 'granted') {
+          await Notification.requestPermission();
+        }
       };
 
       if (loading) return <div className="text-center p-8 text-lg text-gray-500 dark:text-gray-400">Loading matches for {selectedDate}...</div>;
@@ -454,7 +568,7 @@
             <header className="bg-blue-900 dark:bg-blue-800 p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold text-white">Thuto's Daily Betting Tips - Betway Botswana</h1>
-                <p className="text-sm text-gray-300">ML-enhanced bets for {selectedDate} (CAT, UTC+2)</p>
+                <p className="text-sm text-gray-300">AI-enhanced bets for {selectedDate} (CAT, UTC+2)</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <input
@@ -484,8 +598,12 @@
                   onClick={() => {
                     setLoading(true);
                     fetchRealSuggestions(selectedDate).then(d => {
-                      setSuggestions(d);
-                      generateSlips(d, standings).then(s => {
+                      const updated = d.map(s => ({
+                        ...s,
+                        countdown: startCountdown(s)
+                      }));
+                      setSuggestions(updated);
+                      generateSlips(updated, standings, userPrefs).then(s => {
                         setSlips(s);
                         setLoading(false);
                       });
@@ -501,10 +619,38 @@
                 >
                   {darkMode ? '☀️ Light' : '🌙 Dark'}
                 </button>
+                <button
+                  onClick={requestNotificationPermission}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-base sm:text-lg"
+                >
+                  🔔 Notify
+                </button>
               </div>
             </header>
 
-            {/* Custom Prediction Input (from ProphitBet) */}
+            {/* User Preferences */}
+            <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+              <h2 className="text-2xl font-semibold dark:text-white">User Preferences</h2>
+              <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                <select
+                  value={userPrefs.risk}
+                  onChange={e => setUserPrefs({ ...userPrefs, risk: e.target.value })}
+                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+                >
+                  <option value="low">Low Risk</option>
+                  <option value="medium">Medium Risk</option>
+                  <option value="high">High Risk</option>
+                </select>
+                <input
+                  placeholder="Favorite Teams (comma-separated)"
+                  value={userPrefs.favoriteTeams.join(',')}
+                  onChange={e => setUserPrefs({ ...userPrefs, favoriteTeams: e.target.value.split(',').map(t => t.trim()) })}
+                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+                />
+              </div>
+            </section>
+
+            {/* Custom Prediction Input */}
             <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
               <h2 className="text-2xl font-semibold dark:text-white">Predict Match Outcome</h2>
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
@@ -549,12 +695,12 @@
               <main className="lg:col-span-2 space-y-6">
                 <section>
                   <h2 className="text-2xl font-semibold dark:text-white">Safe Single Bets (CAT Time)</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">ML-enhanced high-probability bets</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI-enhanced high-probability bets</p>
                   <div className="space-y-4">
                     {filteredSuggestions.length > 0 ? filteredSuggestions.map(sug => (
                       <div key={sug.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-green-500 hover:shadow-lg transition-shadow">
                         <h3 className="text-xl font-bold dark:text-white">{sug.match}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{sug.league} • {sug.date} {sug.time}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{sug.league} • {sug.date} {sug.time} • Starts in: {sug.countdown}</p>
                         <p className="font-semibold dark:text-white">Market: <span className="text-yellow-500">{sug.market}</span> @ {sug.odds} • Prob: {sug.winProb} ({sug.confidence}) • Score: {sug.score}</p>
                         <p className="mt-2 text-sm dark:text-gray-300">{sug.reasoning}</p>
                         <details className="mt-2 text-sm">
@@ -577,7 +723,7 @@
 
                 <section>
                   <h2 className="text-2xl font-semibold dark:text-white">Multi-Team Slips (~1.20 Odds)</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">ML-enhanced 2-4 leg combos</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI-enhanced 2-4 leg combos</p>
                   <div className="space-y-4">
                     {slips.slice(0, 10).map(slip => (
                       <div key={slip.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
@@ -599,7 +745,7 @@
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
                   <h3 className="text-xl font-semibold mb-4 dark:text-white">Performance Tracker</h3>
                   <canvas id="performanceChart" height="200"></canvas>
-                  <p className="text-sm mt-4 text-center text-gray-500 dark:text-gray-400">ML-enhanced win rate (Updated Sep 30, 2025)</p>
+                  <p className="text-sm mt-4 text-center text-gray-500 dark:text-gray-400">AI-enhanced win rate (Updated Sep 30, 2025)</p>
                 </div>
 
                 <details className="lg:hidden">
@@ -700,7 +846,7 @@
                 </div>
 
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">⚠️ ML-enhanced bets for Sep 30, 2025. Replace API key for live odds. Gamble responsibly 18+.</p>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">⚠️ AI-enhanced bets for Sep 30, 2025. Replace API key for live odds. Gamble responsibly 18+.</p>
                 </div>
               </aside>
             </div>
