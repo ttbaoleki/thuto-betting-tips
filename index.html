@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thuto's Daily Betting Tips - Betway Botswana</title>
 
-  <!-- Tailwind CSS CDN (v3 for better utilities) -->
+  <!-- Favicon -->
+  <link rel="icon" href="https://betway.co.bw/favicon.ico" type="image/x-icon">
+
+  <!-- Google Fonts (Inter) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
 
   <!-- React + ReactDOM -->
@@ -28,7 +34,7 @@
   <script src="https://cdn.jsdelivr.net/npm/comlink@4.4.1/dist/umd/comlink.min.js" defer></script>
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-inter">
   <div id="root"></div>
 
   <script type="text/babel" defer>
@@ -187,11 +193,11 @@
             console.log('Transformer model loaded');
           } catch (e) {
             console.warn('Failed to load transformer model:', e.message);
-            this.transformerSession = null; // Continue without transformer
+            this.transformerSession = null;
           }
         } catch (e) {
           console.error('PredictionAgent initialization error:', e);
-          this.nnModel = null; // Continue with fallback
+          this.nnModel = null;
         }
       },
       async predict(features) {
@@ -456,7 +462,11 @@
         return { error };
       }
       render() {
-        if (this.state.error) return <div className="p-4 text-center text-red-500 dark:text-red-400">Error: {this.state.error.message}. Check console (F12).</div>;
+        if (this.state.error) return (
+          <div className="p-6 text-center text-red-500 dark:text-red-400 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+            Error: {this.state.error.message}. Check console (F12).
+          </div>
+        );
         return this.props.children;
       }
     }
@@ -604,227 +614,343 @@
         }
       };
 
-      if (loading) return <div className="text-center p-8 text-lg text-gray-500 dark:text-gray-400">Loading matches for {selectedDate}...</div>;
+      if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-green-500"></div>
+          <p className="mt-4 text-lg font-medium text-gray-600 dark:text-gray-300">Loading matches for {selectedDate}...</p>
+        </div>
+      );
 
       return (
         <ErrorBoundary>
-          <div className="min-h-screen p-4">
-            <header className="bg-blue-900 dark:bg-blue-800 p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-white">Thuto's Daily Betting Tips - Betway Botswana</h1>
-                <p className="text-sm text-gray-300">AI-enhanced bets for {selectedDate} (CAT, UTC+2)</p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  min="2025-09-01"
-                  max="2025-12-31"
-                  onChange={e => setSelectedDate(e.target.value)}
-                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-                />
-                <select
-                  value={selectedLeague}
-                  onChange={e => setSelectedLeague(e.target.value)}
-                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-                >
-                  {['All', ...config.leagues].map(league => (
-                    <option key={league} value={league}>{league}</option>
-                  ))}
-                </select>
-                <input
-                  placeholder="Search matches, leagues, markets..."
-                  className="flex-1 p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-                <button
-                  onClick={() => {
-                    setLoading(true);
-                    fetchRealSuggestions(selectedDate).then(d => {
-                      const updated = d.map(s => ({
-                        ...s,
-                        countdown: startCountdown(s)
-                      }));
-                      setSuggestions(updated);
-                      generateSlips(updated, standings, userPrefs).then(s => {
-                        setSlips(s);
-                        setLoading(false);
+          <div className="min-h-screen">
+            {/* Sticky Header */}
+            <header className="sticky top-0 z-50 bg-gradient-to-r from-blue-900 to-blue-800 dark:from-blue-800 dark:to-blue-700 shadow-lg">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <img src="https://betway.co.bw/favicon.ico" alt="Betway Logo" className="h-10 w-10" />
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white">Thuto's Betting Tips</h1>
+                    <p className="text-sm text-gray-200">AI-Powered Bets for {selectedDate} (CAT, UTC+2)</p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    min="2025-09-01"
+                    max="2025-12-31"
+                    onChange={e => setSelectedDate(e.target.value)}
+                    className="p-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition"
+                    aria-label="Select date"
+                  />
+                  <select
+                    value={selectedLeague}
+                    onChange={e => setSelectedLeague(e.target.value)}
+                    className="p-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition"
+                    aria-label="Select league"
+                  >
+                    {['All', ...config.leagues].map(league => (
+                      <option key={league} value={league}>{league}</option>
+                    ))}
+                  </select>
+                  <input
+                    placeholder="Search matches, leagues, markets..."
+                    className="p-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    aria-label="Search matches"
+                  />
+                  <button
+                    onClick={() => {
+                      setLoading(true);
+                      fetchRealSuggestions(selectedDate).then(d => {
+                        const updated = d.map(s => ({
+                          ...s,
+                          countdown: startCountdown(s)
+                        }));
+                        setSuggestions(updated);
+                        generateSlips(updated, standings, userPrefs).then(s => {
+                          setSlips(s);
+                          setLoading(false);
+                        });
                       });
-                    });
-                  }}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-base sm:text-lg"
-                >
-                  Refresh Live
-                </button>
-                <button
-                  onClick={() => setDarkMode(!darkMode)}
-                  className="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded text-base sm:text-lg"
-                >
-                  {darkMode ? '☀️ Light' : '🌙 Dark'}
-                </button>
-                <button
-                  onClick={requestNotificationPermission}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-base sm:text-lg"
-                >
-                  🔔 Notify
-                </button>
+                    }}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition transform hover:scale-105"
+                    aria-label="Refresh live data"
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    onClick={() => setDarkMode(!darkMode)}
+                    className="bg-gray-200 dark:bg-gray-600 px-4 py-2 rounded-lg transition transform hover:scale-105"
+                    aria-label="Toggle dark mode"
+                  >
+                    {darkMode ? '☀️ Light' : '🌙 Dark'}
+                  </button>
+                  <button
+                    onClick={requestNotificationPermission}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition transform hover:scale-105"
+                    aria-label="Enable notifications"
+                  >
+                    🔔 Notify
+                  </button>
+                </div>
               </div>
             </header>
 
-            <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-              <h2 className="text-2xl font-semibold dark:text-white">User Preferences</h2>
-              <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                <select
-                  value={userPrefs.risk}
-                  onChange={e => setUserPrefs({ ...userPrefs, risk: e.target.value })}
-                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
+            {/* Hero Section */}
+            <section className="bg-gradient-to-r from-green-500 to-green-600 text-white py-12 px-4 sm:px-6 lg:px-8">
+              <div className="max-w-7xl mx-auto text-center">
+                <h2 className="text-3xl sm:text-4xl font-bold">Win Big with AI-Powered Betting Tips</h2>
+                <p className="mt-2 text-lg">Get high-probability football bets tailored for Betway Botswana</p>
+                <a
+                  href={BETWAY_BW_BASE}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-block bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105"
+                  aria-label="Visit Betway Botswana"
                 >
-                  <option value="low">Low Risk</option>
-                  <option value="medium">Medium Risk</option>
-                  <option value="high">High Risk</option>
-                </select>
-                <input
-                  placeholder="Favorite Teams (comma-separated)"
-                  value={userPrefs.favoriteTeams.join(',')}
-                  onChange={e => setUserPrefs({ ...userPrefs, favoriteTeams: e.target.value.split(',').map(t => t.trim()) })}
-                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-                />
+                  Bet Now
+                </a>
               </div>
             </section>
 
-            <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-              <h2 className="text-2xl font-semibold dark:text-white">Predict Match Outcome</h2>
-              <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                <select
-                  value={selectedLeague}
-                  onChange={e => setSelectedLeague(e.target.value)}
-                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-                >
-                  <option value="">Select League</option>
-                  {config.leagues.map(league => (
-                    <option key={league} value={league}>{league}</option>
-                  ))}
-                </select>
-                <input
-                  placeholder="Home Team"
-                  value={homeTeam}
-                  onChange={e => setHomeTeam(e.target.value)}
-                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-                />
-                <input
-                  placeholder="Away Team"
-                  value={awayTeam}
-                  onChange={e => setAwayTeam(e.target.value)}
-                  className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-                />
-                <button
-                  onClick={handlePredict}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                >
-                  Predict
-                </button>
-              </div>
-              {prediction && (
-                <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-700 rounded">
-                  <p className="dark:text-white">Prediction: {prediction.recommendation}</p>
-                  <p className="dark:text-white">Home Win Probability: {prediction.homeWinProb}</p>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {/* User Preferences */}
+              <section className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-8 animate-fade-in">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Customize Your Bets</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <select
+                    value={userPrefs.risk}
+                    onChange={e => setUserPrefs({ ...userPrefs, risk: e.target.value })}
+                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
+                    aria-label="Select risk level"
+                  >
+                    <option value="low">Low Risk</option>
+                    <option value="medium">Medium Risk</option>
+                    <option value="high">High Risk</option>
+                  </select>
+                  <input
+                    placeholder="Favorite Teams (comma-separated)"
+                    value={userPrefs.favoriteTeams.join(',')}
+                    onChange={e => setUserPrefs({ ...userPrefs, favoriteTeams: e.target.value.split(',').map(t => t.trim()) })}
+                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
+                    aria-label="Enter favorite teams"
+                  />
                 </div>
-              )}
-            </section>
+              </section>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <main className="lg:col-span-2 space-y-6">
-                <section>
-                  <h2 className="text-2xl font-semibold dark:text-white">Safe Single Bets (CAT Time)</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI-enhanced high-probability bets</p>
-                  <div className="space-y-4">
-                    {filteredSuggestions.length > 0 ? filteredSuggestions.map(sug => (
-                      <div key={sug.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-green-500 hover:shadow-lg transition-shadow">
-                        <h3 className="text-xl font-bold dark:text-white">{sug.match}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{sug.league} • {sug.date} {sug.time} • Starts in: {sug.countdown}</p>
-                        <p className="font-semibold dark:text-white">Market: <span className="text-yellow-500">{sug.market}</span> @ {sug.odds} • Prob: {sug.winProb} ({sug.confidence}) • Score: {sug.score}</p>
-                        <p className="mt-2 text-sm dark:text-gray-300">{sug.reasoning}</p>
-                        <details className="mt-2 text-sm">
-                          <summary className="text-blue-500 dark:text-blue-400 cursor-pointer">View Stats</summary>
-                          <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded mt-1">
-                            <p className="dark:text-white">Form: Home {sug.form.home} (xG {sug.form.xG}), Away {sug.form.away} (xGA {sug.form.xGA})</p>
-                            <p className="dark:text-white">H2H: {sug.headToHead}</p>
-                            <p className="dark:text-white">Injuries: Home {sug.injuries.home}, Away {sug.injuries.away}</p>
+              {/* Custom Prediction Input */}
+              <section className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-8 animate-fade-in">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Predict Match Outcome</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
+                  <select
+                    value={selectedLeague}
+                    onChange={e => setSelectedLeague(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
+                    aria-label="Select league for prediction"
+                  >
+                    <option value="">Select League</option>
+                    {config.leagues.map(league => (
+                      <option key={league} value={league}>{league}</option>
+                    ))}
+                  </select>
+                  <input
+                    placeholder="Home Team"
+                    value={homeTeam}
+                    onChange={e => setHomeTeam(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
+                    aria-label="Enter home team"
+                  />
+                  <input
+                    placeholder="Away Team"
+                    value={awayTeam}
+                    onChange={e => setAwayTeam(e.target.value)}
+                    className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-green-500 transition"
+                    aria-label="Enter away team"
+                  />
+                  <button
+                    onClick={handlePredict}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition transform hover:scale-105"
+                    aria-label="Predict match outcome"
+                  >
+                    Predict
+                  </button>
+                </div>
+                {prediction && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <p className="text-gray-900 dark:text-white font-medium">Prediction: {prediction.recommendation}</p>
+                    <p className="text-gray-900 dark:text-white">Home Win Probability: {prediction.homeWinProb}</p>
+                  </div>
+                )}
+              </section>
+
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <main className="lg:col-span-3 space-y-8">
+                  {/* Safe Single Bets */}
+                  <section className="animate-fade-in">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Safe Single Bets</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">High-probability bets powered by AI</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredSuggestions.length > 0 ? filteredSuggestions.map(sug => (
+                        <div
+                          key={sug.id}
+                          className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-transform transform hover:scale-[1.02] animate-fade-in"
+                        >
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">{sug.match}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{sug.league} • {sug.date} {sug.time} • Starts in: {sug.countdown}</p>
+                          <p className="font-semibold text-gray-900 dark:text-white mt-2">
+                            Market: <span className="text-yellow-500">{sug.market}</span> @ {sug.odds} • Prob: {sug.winProb} ({sug.confidence}) • Score: {sug.score}
+                          </p>
+                          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{sug.reasoning}</p>
+                          <details className="mt-2 text-sm">
+                            <summary className="text-blue-500 dark:text-blue-400 cursor-pointer hover:underline">View Stats</summary>
+                            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg mt-1">
+                              <p className="text-gray-900 dark:text-white">Form: Home {sug.form.home} (xG {sug.form.xG}), Away {sug.form.away} (xGA {sug.form.xGA})</p>
+                              <p className="text-gray-900 dark:text-white">H2H: {s Lee's suggestion.headToHead}</p>
+                              <p className="text-gray-900 dark:text-white">Injuries: Home {sug.injuries.home}, Away {sug.injuries.away}</p>
+                            </div>
+                          </details>
+                          <a
+                            href={sug.betwayLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-block bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold transition transform hover:scale-105"
+                            aria-label={`Bet on ${sug.match} at Betway`}
+                          >
+                            Bet Now
+                          </a>
+                        </div>
+                      )) : (
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center text-gray-600 dark:text-gray-400">
+                          No matches for {selectedDate}. Try another date or league.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Multi-Team Slips */}
+                  <section className="animate-fade-in">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Multi-Team Slips (~1.20 Odds)</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">AI-enhanced 2-4 leg betting combinations</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {slips.slice(0, 10).map(slip => (
+                        <div
+                          key={slip.id}
+                          className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-transform transform hover:scale-[1.02] animate-fade-in"
+                        >
+                          <h3 className="font-bold text-gray-900 dark:text-white">Slip #{slip.id} • Odds: {slip.totalOdds} • Win Prob: {slip.winProb}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{slip.reasoning}</p>
+                          <ul className="text-sm mt-2 space-y-1 text-gray-600 dark:text-gray-300">
+                            {slip.legs.map((leg, i) => (
+                              <li key={i}>• {leg.match} ({leg.league}): {leg.market} @ {leg.odds} ({leg.winProb}, Score: {leg.score})</li>
+                            ))}
+                          </ul>
+                          <a
+                            href={BETWAY_BW_BASE}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-block bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold transition transform hover:scale-105"
+                            aria-label={`Build slip ${slip.id} on Betway`}
+                          >
+                            Build Slip
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </main>
+
+                <aside className="space-y-6">
+                  {/* Performance Tracker */}
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Performance Tracker</h3>
+                    <canvas id="performanceChart" height="200"></canvas>
+                    <p className="text-sm mt-4 text-center text-gray-600 dark:text-gray-400">AI-enhanced win rate (Updated Sep 30, 2025)</p>
+                  </div>
+
+                  {/* League Standings (Mobile) */}
+                  <details className="lg:hidden bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in">
+                    <summary className="font-semibold text-lg text-blue-900 dark:text-blue-300 cursor-pointer">League Standings</summary>
+                    <div className="mt-4 overflow-x-auto">
+                      {Object.entries(standings).map(([league, table]) => (
+                        <details key={league} className="mb-4">
+                          <summary className="font-semibold text-lg text-blue-900 dark:text-blue-300 cursor-pointer">{league}</summary>
+                          <div className="mt-2">
+                            <table className="w-full text-xs border-collapse">
+                              <thead>
+                                <tr className="bg-blue-900 dark:bg-blue-800 text-white">
+                                  <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')} aria-label="Sort by team">Team</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')} aria-label="Sort by played">P</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')} aria-label="Sort by won">W</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')} aria-label="Sort by drawn">D</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')} aria-label="Sort by lost">L</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')} aria-label="Sort by goals for">GF</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')} aria-label="Sort by goals against">GA</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')} aria-label="Sort by goal difference">GD</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')} aria-label="Sort by points">Pts</th>
+                                  <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')} aria-label="Sort by home win rate">Home %</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {table.map((row, i) => (
+                                  <tr key={i} className="border-b border-gray-200 dark:border-gray-600">
+                                    <td className="p-2 text-left font-medium text-gray-900 dark:text-white">{row.team}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.played}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.won}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.drawn}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.lost}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.gf}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.ga}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.gd}</td>
+                                    <td className="p-2 font-bold text-yellow-500 dark:text-yellow-400">{row.pts}</td>
+                                    <td className="p-2 text-gray-900 dark:text-white">{row.homeWinRate}%</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         </details>
-                        <a href={sug.betwayLink} target="_blank" rel="noopener noreferrer" className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded mt-2 inline-block text-base sm:text-lg">Bet on Betway BW</a>
-                      </div>
-                    )) : (
-                      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                        <p className="text-center text-gray-500 dark:text-gray-400">No matches for {selectedDate}. Check league filter.</p>
-                      </div>
-                    )}
-                  </div>
-                </section>
+                      ))}
+                    </div>
+                  </details>
 
-                <section>
-                  <h2 className="text-2xl font-semibold dark:text-white">Multi-Team Slips (~1.20 Odds)</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AI-enhanced 2-4 leg combos</p>
-                  <div className="space-y-4">
-                    {slips.slice(0, 10).map(slip => (
-                      <div key={slip.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
-                        <h3 className="font-bold dark:text-white">Slip #{slip.id} • Odds: {slip.totalOdds} • Win Prob: {slip.winProb}</h3>
-                        <p className="text-sm dark:text-gray-300">{slip.reasoning}</p>
-                        <ul className="text-xs mt-2 space-y-1 dark:text-gray-300">
-                          {slip.legs.map((leg, i) => (
-                            <li key={i}>• {leg.match} ({leg.league}): {leg.market} @ {leg.odds} ({leg.winProb}, Score: {leg.score})</li>
-                          ))}
-                        </ul>
-                        <a href={BETWAY_BW_BASE} target="_blank" rel="noopener noreferrer" className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded mt-2 inline-block text-base sm:text-lg">Build Slip on Betway BW</a>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </main>
-
-              <aside className="space-y-6">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                  <h3 className="text-xl font-semibold mb-4 dark:text-white">Performance Tracker</h3>
-                  <canvas id="performanceChart" height="200"></canvas>
-                  <p className="text-sm mt-4 text-center text-gray-500 dark:text-gray-400">AI-enhanced win rate (Updated Sep 30, 2025)</p>
-                </div>
-
-                <details className="lg:hidden">
-                  <summary className="font-semibold cursor-pointer text-lg text-blue-900 dark:text-blue-300">League Standings</summary>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mt-2 overflow-x-auto">
+                  {/* League Standings (Desktop) */}
+                  <div className="hidden lg:block bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in overflow-x-auto">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">League Standings</h3>
                     {Object.entries(standings).map(([league, table]) => (
                       <details key={league} className="mb-4">
-                        <summary className="font-semibold cursor-pointer text-lg text-blue-900 dark:text-blue-300">{league}</summary>
+                        <summary className="font-semibold text-lg text-blue-900 dark:text-blue-300 cursor-pointer">{league}</summary>
                         <div className="mt-2">
-                          <table className="w-full text-xs border-collapse">
+                          <table className="w-full text-sm border-collapse">
                             <thead>
                               <tr className="bg-blue-900 dark:bg-blue-800 text-white">
-                                <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')}>Team</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')}>P</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')}>W</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')}>D</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')}>L</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')}>GF</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')}>GA</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')}>GD</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')}>Pts</th>
-                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')}>Home %</th>
+                                <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')} aria-label="Sort by team">Team</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')} aria-label="Sort by played">P</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')} aria-label="Sort by won">W</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')} aria-label="Sort by drawn">D</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')} aria-label="Sort by lost">L</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')} aria-label="Sort by goals for">GF</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')} aria-label="Sort by goals against">GA</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')} aria-label="Sort by goal difference">GD</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')} aria-label="Sort by points">Pts</th>
+                                <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')} aria-label="Sort by home win rate">Home %</th>
                               </tr>
                             </thead>
                             <tbody>
                               {table.map((row, i) => (
-                                <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
-                                  <td className="p-2 text-left font-medium dark:text-white">{row.team}</td>
-                                  <td className="p-2 dark:text-white">{row.played}</td>
-                                  <td className="p-2 dark:text-white">{row.won}</td>
-                                  <td className="p-2 dark:text-white">{row.drawn}</td>
-                                  <td className="p-2 dark:text-white">{row.lost}</td>
-                                  <td className="p-2 dark:text-white">{row.gf}</td>
-                                  <td className="p-2 dark:text-white">{row.ga}</td>
-                                  <td className="p-2 dark:text-white">{row.gd}</td>
+                                <tr key={i} className="border-b border-gray-200 dark:border-gray-600">
+                                  <td className="p-2 text-left font-medium text-gray-900 dark:text-white">{row.team}</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.played}</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.won}</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.drawn}</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.lost}</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.gf}</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.ga}</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.gd}</td>
                                   <td className="p-2 font-bold text-yellow-500 dark:text-yellow-400">{row.pts}</td>
-                                  <td className="p-2 dark:text-white">{row.homeWinRate}%</td>
+                                  <td className="p-2 text-gray-900 dark:text-white">{row.homeWinRate}%</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -833,64 +959,31 @@
                       </details>
                     ))}
                   </div>
-                </details>
 
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hidden lg:block overflow-x-auto">
-                  <h3 className="text-xl font-semibold mb-4 dark:text-white">League Standings</h3>
-                  {Object.entries(standings).map(([league, table]) => (
-                    <details key={league} className="mb-4">
-                      <summary className="font-semibold cursor-pointer text-lg text-blue-900 dark:text-blue-300">{league}</summary>
-                      <div className="mt-2">
-                        <table className="w-full text-sm border-collapse">
-                          <thead>
-                            <tr className="bg-blue-900 dark:bg-blue-800 text-white">
-                              <th className="p-2 cursor-pointer text-left" onClick={() => sortStandings(league, 'team')}>Team</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'played')}>P</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'won')}>W</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'drawn')}>D</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'lost')}>L</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gf')}>GF</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'ga')}>GA</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'gd')}>GD</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'pts')}>Pts</th>
-                              <th className="p-2 cursor-pointer" onClick={() => sortStandings(league, 'homeWinRate')}>Home %</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {table.map((row, i) => (
-                              <tr key={i} className="border-b border-gray-200 dark:border-gray-700">
-                                <td className="p-2 text-left font-medium dark:text-white">{row.team}</td>
-                                <td className="p-2 dark:text-white">{row.played}</td>
-                                <td className="p-2 dark:text-white">{row.won}</td>
-                                <td className="p-2 dark:text-white">{row.drawn}</td>
-                                <td className="p-2 dark:text-white">{row.lost}</td>
-                                <td className="p-2 dark:text-white">{row.gf}</td>
-                                <td className="p-2 dark:text-white">{row.ga}</td>
-                                <td className="p-2 dark:text-white">{row.gd}</td>
-                                <td className="p-2 font-bold text-yellow-500 dark:text-yellow-400">{row.pts}</td>
-                                <td className="p-2 dark:text-white">{row.homeWinRate}%</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </details>
-                  ))}
-                </div>
+                  {/* Data Sources */}
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg animate-fade-in">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Data Sources</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li><a href="https://www.sofascore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Sofascore</a></li>
+                      <li><a href="https://www.flashscore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Flashscore</a></li>
+                      <li><a href="https://www.soccer24.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Soccer24</a></li>
+                    </ul>
+                  </div>
 
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                  <h3 className="text-xl font-semibold mb-4 dark:text-white">Data Sources</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li><a href="https://www.sofascore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Sofascore</a></li>
-                    <li><a href="https://www.flashscore.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Flashscore</a></li>
-                    <li><a href="https://www.soccer24.com/" target="_blank" rel="noopener" className="text-blue-500 hover:underline dark:text-blue-400">Soccer24</a></li>
-                  </ul>
-                </div>
+                  {/* Disclaimer */}
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-200 dark:border-yellow-800 animate-fade-in">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">⚠️ AI-enhanced bets for Sep 30, 2025. Replace API key for live odds. Gamble responsibly 18+.</p>
+                  </div>
+                </aside>
+              </div>
 
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">⚠️ AI-enhanced bets for Sep 30, 2025. Replace API key for live odds. Gamble responsibly 18+.</p>
+              {/* Footer */}
+              <footer className="bg-blue-900 dark:bg-blue-800 text-white py-6 mt-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                  <p className="text-sm">Powered by Thuto's AI Betting Engine | <a href="https://betway.co.bw" target="_blank" rel="noopener" className="text-yellow-400 hover:underline">Betway Botswana</a></p>
+                  <p className="text-xs mt-2">© 2025 Thuto's Betting Tips. All rights reserved.</p>
                 </div>
-              </aside>
+              </footer>
             </div>
           </div>
         </ErrorBoundary>
@@ -907,11 +1000,11 @@
         console.log('App rendered successfully');
       } else {
         console.error('Root element not found');
-        document.body.innerHTML = '<div class="text-center p-4 text-red-500 dark:text-red-400">Error: Root element not found.</div>';
+        document.body.innerHTML = '<div className="text-center p-4 text-red-500 dark:text-red-400">Error: Root element not found.</div>';
       }
     } catch (err) {
       console.error('Render error:', err);
-      document.body.innerHTML = '<div class="text-center p-4 text-red-500 dark:text-red-400">Render Error: ' + err.message + '. Check console (F12).</div>';
+      document.body.innerHTML = '<div className="text-center p-4 text-red-500 dark:text-red-400">Render Error: ' + err.message + '. Check console (F12).</div>';
     }
   </script>
 
@@ -922,20 +1015,31 @@
       --brand-gold-text: #FFD700;
       --muted-gray: #6B7280;
     }
+    body {
+      font-family: 'Inter', sans-serif;
+    }
     .dark { color: #F9FAFB; }
     .bg-blue-900 { background-color: var(--brand-dark-blue); }
     .bg-green-500 { background-color: var(--brand-green); }
     .bg-green-500:hover { background-color: #218838; }
     .text-yellow-500 { color: var(--brand-gold-text); }
-    .text-gray-500 { color: var(--muted-gray); }
-    .dark .bg-gray-100 { background-color: #374151 !important; }
+    .text-gray-600 { color: var(--muted-gray); }
+    .dark .bg-gray-50 { background-color: #1F2937; }
     .dark .text-gray-300 { color: #D1D5DB; }
-    .dark .border-gray-200 { border-color: #4B5563; }
+    .dark .border-gray-300 { border-color: #4B5563; }
     table th:hover { background-color: #2D4B5B; }
     .dark table th:hover { background-color: #4B5563; }
     @media (max-width: 640px) {
       table { font-size: 0.75rem; }
-      table th, table td { padding: 0.25rem; }
+      table th, table td { padding: 0.5rem; }
+    }
+    /* Custom Animations */
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.5s ease-out;
     }
   </style>
 </body>
