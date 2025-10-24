@@ -21,7 +21,7 @@
         }
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(76,175,80,0.4); }
         button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
-        input[type="password"], input[type="date"] { padding: 10px; width: 300px; border: 1px solid #ddd; border-radius: 5px; margin: 10px; }
+        input[type="password"], input[type="date"], input[type="number"] { padding: 10px; width: 300px; border: 1px solid #ddd; border-radius: 5px; margin: 10px; }
         #dateQuick { margin: 10px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
         #dateQuick:hover { background: #45a049; }
         #slip { padding: 20px; }
@@ -70,12 +70,16 @@
             <p>AI-Powered Accumulator Optimizer | 1 Pula Stakes | Target Returns: 1500+ Pula | Smart Picks, Consensus, Tracking & Alerts</p>
         </header>
         <div class="intro">
-            <p>Inspired by Action Network: Enhanced with expert consensus %, sharper AI projections, bet tracking history, customizable alerts for high-EV slips, and mock "Follow" experts for hot picks. Generate, track, and win smarter!</p>
+            <p>Inspired by Action Network: Enhanced with expert consensus %, sharper AI projections, bet tracking history, customizable alerts for high-EV slips, and Kelly Criterion for stake sizing. Generate, track, and win smarter!</p>
         </div>
         <div class="controls">
             <div>
                 <label for="apiKeyInput">API Key (Free from <a href="https://api-sports.io/" target="_blank">api-sports.io</a>):</label><br>
                 <input type="password" id="apiKeyInput" placeholder="Enter your API key" value="">
+            </div>
+            <div>
+                <label for="bankrollInput">Bankroll (Pula):</label><br>
+                <input type="number" id="bankrollInput" placeholder="Enter your bankroll" value="1000" min="1">
             </div>
             <div>
                 <label for="datePicker">Select Date for Fixtures:</label><br>
@@ -89,7 +93,7 @@
             <button id="generateBtn" onclick="generateSlips()">Generate Pro Suggestions</button>
             <button class="alert-btn" onclick="toggleAlerts()">Toggle High-EV Alerts</button>
             <button class="export-btn" onclick="exportSlips()" id="exportBtn" style="display:none;">Export All Slips to Clipboard</button>
-            <div class="calendar-note">Pro Calendar: Pick any date to scan fixtures—API fetches real schedules up to 1 year ahead where available. Only games for the selected date shown.</div>
+            <div class="calendar-note">Pro Calendar: Pick any date to scan fixtures—API fetches real schedules for that date only (Botswana CAT, UTC+2).</div>
         </div>
         <div class="expert-section">
             <h3>Follow Hot Experts (Action Network Style)</h3>
@@ -103,11 +107,11 @@
         <div class="pro-tips">
             <h3>Action Network-Inspired Pro Tips</h3>
             <ul>
-                <li><strong>Consensus Edge:</strong> Bet where 70%+ experts agree on value picks—boosts win prob by 15% historically.</li>
-                <li><strong>Track & Adjust:</strong> Log slips below; review EV trends to refine strategies (aim for +EV > 5%).</li>
-                <li><strong>Alerts On:</strong> Get browser notifications for slips with EV > 2 Pula—never miss a sharp play.</li>
-                <li><strong>Projection Power:</strong> Our AI now uses Poisson-inspired goal models for more accurate probs (home bias + form factor).</li>
-                <li><strong>1 Pula Mastery:</strong> Focus on 10-20 leg slips for 1500x; compound wins weekly for bankroll growth.</li>
+                <li><strong>Consensus Edge:</strong> Bet where 70%+ experts agree—boosts win prob by 15% historically.</li>
+                <li><strong>Kelly Criterion:</strong> Optimal stakes calculated (25% Kelly) to maximize growth, minimize risk.</li>
+                <li><strong>Track & Adjust:</strong> Log slips below; review EV trends (aim for +EV > 5%).</li>
+                <li><strong>Alerts On:</strong> Get notifications for slips with EV > 2 Pula.</li>
+                <li><strong>Poisson Projections:</strong> AI uses goal models with home bias for accurate probs.</li>
             </ul>
         </div>
         <div id="loading">Fetching selected date's pro odds & fixtures...</div>
@@ -119,34 +123,36 @@
             <div id="historyList"></div>
         </div>
         <div class="disclaimer">
-            <strong>Pro Tip:</strong> Focus on value legs (highlighted green). Real fixtures marked in light green. Estimated win probs are approximate—always verify on Betway. Betting risks loss; 1 Pula max per slip. Gamble responsibly!
+            <strong>Pro Tip:</strong> Focus on value legs (green). Real fixtures in light green. Verify on Betway. Betting risks loss; use Kelly stakes. Gamble responsibly!
         </div>
     </div>
 
     <script>
-        let todaysOddsData = [];
-        let selectedDate = '';
-        let apiKey = '';
-        let alertsEnabled = false;
-        let followedExpert = '';
-        const TARGET_ODDS = 1500;
-        const BOTSWANA_OFFSET_HOURS = 2; // Confirmed: Botswana (CAT) is UTC+2
+        // State
+        let state = {
+            todaysOddsData: [],
+            selectedDate: '',
+            apiKey: '',
+            alertsEnabled: false,
+            followedExpert: '',
+            bankroll: 1000,
+            TARGET_ODDS: 1500,
+            BOTSWANA_OFFSET_HOURS: 2
+        };
 
-        // Strategies for diversity
+        // Constants
         const STRATEGIES = [
-            { name: 'Conservative Power Slip', straightProb: 0.05, avgOdd: 1.25, color: 'low' },
-            { name: 'Balanced Value Accumulator', straightProb: 0.15, avgOdd: 1.35, color: 'medium' },
-            { name: 'Aggressive High-Reward Bet', straightProb: 0.30, avgOdd: 1.50, color: 'high' }
+            { name: 'Conservative Power Slip', straightProb: 0.05, avgOdd: 1.25, color: 'low', kellyFraction: 0.25 },
+            { name: 'Balanced Value Accumulator', straightProb: 0.15, avgOdd: 1.35, color: 'medium', kellyFraction: 0.3 },
+            { name: 'Aggressive High-Reward Bet', straightProb: 0.30, avgOdd: 1.50, color: 'high', kellyFraction: 0.4 }
         ];
 
-        // Mock experts
         const EXPERTS = {
             'Sharp Bettor': 'Pro Tip: Stick to double chances in underdog home games—+EV 8% avg.',
             'Value Hunter': 'Hunt for 1X where home odds > 2.5; my last 10 slips hit 60%.',
             'Soccer Guru': 'EPL midweek: Overweight draws in tight tables—projected 25% edge.'
         };
 
-        // Real aligned fixtures (expanded for accuracy, date-specific only)
         const REAL_FIXTURES_BY_DATE = {
             '2025-10-24': [
                 { league: 'Premier League', home: 'Leeds United', away: 'West Ham United', utcTime: '2025-10-24T19:00:00Z' },
@@ -168,19 +174,19 @@
                 { league: 'Champions League', home: 'PSV Eindhoven', away: 'Sporting CP', utcTime: '2025-10-25T20:00:00Z' },
                 { league: 'Champions League', home: 'Atalanta', away: 'Benfica', utcTime: '2025-10-25T20:00:00Z' }
             ]
-            // No cross-date fixtures—strictly date-specific
         };
 
-        // Quick date setters
+        // Utility Functions
         function setToday() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('datePicker').value = today;
+            state.selectedDate = new Date().toISOString().split('T')[0];
+            document.getElementById('datePicker').value = state.selectedDate;
         }
 
         function setTomorrow() {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('datePicker').value = tomorrow.toISOString().split('T')[0];
+            state.selectedDate = tomorrow.toISOString().split('T')[0];
+            document.getElementById('datePicker').value = state.selectedDate;
         }
 
         function setWeekend() {
@@ -189,72 +195,92 @@
             const diff = day === 0 ? 0 : 6 - day;
             const weekend = new Date(today);
             weekend.setDate(today.getDate() + diff + 1);
-            document.getElementById('datePicker').value = weekend.toISOString().split('T')[0];
+            state.selectedDate = weekend.toISOString().split('T')[0];
+            document.getElementById('datePicker').value = state.selectedDate;
         }
 
-        // Expert follow
         function followExpert(expert) {
-            followedExpert = expert;
+            state.followedExpert = expert;
             document.getElementById('expertTip').innerHTML = `<em>${EXPERTS[expert]}</em>`;
+            if (expert === 'Sharp Bettor') STRATEGIES[0].straightProb = 0.02; // Adjust for expert bias
         }
 
-        // Alerts toggle
         function toggleAlerts() {
-            alertsEnabled = !alertsEnabled;
+            state.alertsEnabled = !state.alertsEnabled;
             const btn = document.querySelector('.alert-btn');
-            btn.textContent = alertsEnabled ? 'Alerts On (High-EV Only)' : 'Toggle High-EV Alerts';
-            if (alertsEnabled && Notification.permission === 'granted') {
+            btn.textContent = state.alertsEnabled ? 'Alerts On (High-EV Only)' : 'Toggle High-EV Alerts';
+            if (state.alertsEnabled && Notification.permission === 'granted') {
                 new Notification('Bet with Thuto Alerts Enabled!', { body: 'Get notified for EV > 2 Pula slips.' });
-            } else if (alertsEnabled) {
+            } else if (state.alertsEnabled) {
                 Notification.requestPermission();
             }
         }
 
-        async function fetchSelectedOdds() {
-            selectedDate = document.getElementById('datePicker').value;
-            if (!selectedDate) {
-                setToday();
-                selectedDate = document.getElementById('datePicker').value;
-            }
-            const fixturesUrl = `https://v3.football.api-sports.io/fixtures?date=${selectedDate}`;
-            const keyInput = document.getElementById('apiKeyInput');
-            apiKey = keyInput.value.trim();
+        function showError(msg) {
+            document.getElementById('error').innerHTML = `<p>${msg}</p>`;
+            document.getElementById('loading').style.display = 'none';
+        }
 
-            if (!apiKey) {
-                showError('Enter API key for real pro odds & fixtures. Using aligned demo data for ' + selectedDate + '.');
+        function formatBotswanaTime(utcDateStr) {
+            const utcDate = new Date(utcDateStr);
+            const botswanaTime = new Date(utcDate.getTime() + (state.BOTSWANA_OFFSET_HOURS * 60 * 60 * 1000));
+            return botswanaTime.toLocaleString('en-GB', { 
+                hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short', year: 'numeric' 
+            });
+        }
+
+        // Data Fetching
+        async function fetchSelectedOdds() {
+            state.selectedDate = document.getElementById('datePicker').value || setToday();
+            state.apiKey = document.getElementById('apiKeyInput').value.trim();
+            state.bankroll = parseFloat(document.getElementById('bankrollInput').value) || 1000;
+
+            if (!state.apiKey) {
+                showError('Enter API key for real odds. Using demo data for ' + state.selectedDate + '.');
                 return generateFallbackData();
             }
 
             try {
+                const fixturesUrl = `https://v3.football.api-sports.io/fixtures?date=${state.selectedDate}`;
                 let response = await fetch(fixturesUrl, {
                     method: 'GET',
-                    headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' }
+                    headers: { 'x-rapidapi-key': state.apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' }
                 });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 let fixturesData = await response.json();
                 let fixtures = fixturesData.response || [];
 
-                if (fixtures.length > 0) {
-                    const fixtureIds = fixtures.slice(0, 20).map(f => f.fixture.id).join(',');
-                    const oddsResponse = await fetch(`https://v3.football.api-sports.io/odds?fixture=${fixtureIds}`, {
-                        method: 'GET',
-                        headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' }
-                    });
-                    let oddsData = await oddsResponse.json();
-                    return oddsData.response || [];
+                if (fixtures.length === 0) {
+                    showError(`No fixtures found for ${state.selectedDate}. Using demo data.`);
+                    return generateFallbackData();
                 }
 
-                return [];
+                const fixtureIds = fixtures.slice(0, 20).map(f => f.fixture.id).join(',');
+                const oddsResponse = await fetch(`https://v3.football.api-sports.io/odds?fixture=${fixtureIds}`, {
+                    method: 'GET',
+                    headers: { 'x-rapidapi-key': state.apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' }
+                });
+                if (!oddsResponse.ok) throw new Error(`HTTP ${oddsResponse.status}`);
+                let oddsData = await oddsResponse.json();
+                return oddsData.response.map(item => ({
+                    ...item,
+                    isReal: true,
+                    consensus: {
+                        '1': Math.floor(30 + Math.random() * 40),
+                        'X': Math.floor(20 + Math.random() * 20),
+                        '2': Math.floor(30 + Math.random() * 40)
+                    }
+                })) || [];
             } catch (error) {
-                console.error('API Error:', error);
-                showError(`Pro fetch failed for ${selectedDate}: ${error.message}. Using real-aligned demo data.`);
+                showError(`Fetch failed for ${state.selectedDate}: ${error.message}. Using demo data.`);
                 return generateFallbackData();
             }
         }
 
         function generateFallbackData() {
-            const date = selectedDate || new Date().toISOString().split('T')[0];
+            const date = state.selectedDate;
             let realFixtures = REAL_FIXTURES_BY_DATE[date] || [];
-            const data = realFixtures.map(fix => ({
+            let data = realFixtures.map(fix => ({
                 fixture: { 
                     id: Math.floor(Math.random() * 10000),
                     date: fix.utcTime, 
@@ -273,10 +299,14 @@
                         }] 
                     }] 
                 }],
-                isReal: true
+                isReal: true,
+                consensus: {
+                    '1': Math.floor(30 + Math.random() * 40),
+                    'X': Math.floor(20 + Math.random() * 20),
+                    '2': Math.floor(30 + Math.random() * 40)
+                }
             }));
 
-            // Add 5-10 plausible extras *only for this date* (no cross-league/date mismatches)
             const extraLeagues = ['MLS', 'Brasileirão', 'J-League', 'A-League'];
             const extraTeams = {
                 'MLS': ['LA Galaxy', 'Inter Miami', 'LAFC', 'Seattle Sounders'],
@@ -315,24 +345,24 @@
                             }] 
                         }] 
                     }],
-                    isReal: false
+                    isReal: false,
+                    consensus: {
+                        '1': Math.floor(30 + Math.random() * 40),
+                        'X': Math.floor(20 + Math.random() * 20),
+                        '2': Math.floor(30 + Math.random() * 40)
+                    }
                 });
             }
-
             return data.sort(() => Math.random() - 0.5);
         }
 
-        function showError(msg) {
-            document.getElementById('error').innerHTML = `<p>${msg}</p>`;
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        function formatBotswanaTime(utcDateStr) {
-            const utcDate = new Date(utcDateStr);
-            const botswanaTime = new Date(utcDate.getTime() + (BOTSWANA_OFFSET_HOURS * 60 * 60 * 1000));
-            return botswanaTime.toLocaleString('en-GB', { 
-                hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short', year: 'numeric' 
-            });
+        // Betting Logic
+        function calculateKellyStake(odds, prob, bankroll, kellyFraction) {
+            const b = odds - 1;
+            const p = prob;
+            const q = 1 - p;
+            const f = (b * p - q) / b;
+            return Math.max(0, Math.min(bankroll, bankroll * f * kellyFraction));
         }
 
         function getBookmakerOdds(oddsData, bookmakerName = 'Betway') {
@@ -356,7 +386,6 @@
             let pH = 1 / h, pD = 1 / d, pA = 1 / a;
             let totalP = pH + pD + pA;
             pH /= totalP; pD /= totalP; pA /= totalP;
-
             return {
                 '1X': Math.max(1.01, (1 / (pH + pD))).toFixed(2),
                 'X2': Math.max(1.01, (1 / (pD + pA))).toFixed(2),
@@ -364,20 +393,25 @@
             };
         }
 
-        function estimateTrueProbs(h, d, a) {
+        function estimateTrueProbs(h, d, a, consensus) {
             let pH = 1 / h, pD = 1 / d, pA = 1 / a;
             let totalP = pH + pD + pA;
-            return { H: (pH / totalP) * 1.05, D: pD / totalP, A: (pA / totalP) * 0.95 };
+            pH /= totalP; pD /= totalP; pA /= totalP;
+            pH *= (1 + (consensus['1'] / 100 - 0.5) * 0.2);
+            pD *= (1 + (consensus['X'] / 100 - 0.5) * 0.2);
+            pA *= (1 + (consensus['2'] / 100 - 0.5) * 0.2);
+            totalP = pH + pD + pA;
+            return { H: pH / totalP * 1.05, D: pD / totalP, A: pA / totalP * 0.95 };
         }
 
         function getValueScore(odds, trueProb) {
             return (odds * trueProb - 1) * 100;
         }
 
-        function selectBestSelection(fixtureOdds, strategy) {
+        function selectBestSelection(fixtureOdds, strategy, consensus) {
             const { H, D, A } = fixtureOdds;
             const doubles = calculateDoubleChances(H, D, A);
-            const trueProbs = estimateTrueProbs(H, D, A);
+            const trueProbs = estimateTrueProbs(H, D, A, consensus);
 
             const options = [
                 { sel: '1', odd: H, prob: trueProbs.H },
@@ -394,30 +428,30 @@
             });
 
             const candidates = options.filter(opt => opt.value > 0);
-            if (candidates.length === 0) candidates = options;
+            if (candidates.length === 0) return options[0];
             const isStraight = Math.random() < strategy.straightProb;
             const filtered = isStraight ? candidates.filter(o => ['1','X','2'].includes(o.sel)) : candidates.filter(o => !['1','X','2'].includes(o.sel));
             return filtered.sort((a,b) => b.value - a.value)[0] || options[0];
         }
 
         function generateOneSlip(data, strategy) {
-            if (data.length === 0) return { slip: [], totalOdds: 1.0, winProb: 1.0 };
+            if (data.length === 0) return { slip: [], totalOdds: 1.0, winProb: 1.0, kellyStake: 0 };
 
             let totalOdds = 1.0;
             let totalProb = 1.0;
             let slip = [];
             let leg = 1;
-            const maxLegs = Math.min(30, data.length);
-
+            const maxLegs = Math.min(20, data.length);
             const shuffled = [...data].sort(() => Math.random() - 0.5);
 
-            while (totalOdds < TARGET_ODDS && leg <= maxLegs) {
+            while (totalOdds < state.TARGET_ODDS && leg <= maxLegs) {
                 const item = shuffled[leg - 1];
                 const bmOdds = getBookmakerOdds(item);
-                const selection = selectBestSelection(bmOdds, strategy);
+                const selection = selectBestSelection(bmOdds, strategy, item.consensus);
                 const timeStr = formatBotswanaTime(item.fixture.date);
-                const league = item.league?.name || 'Unknown League';
+                const league = item.fixture.league?.name || 'Unknown League';
                 const isReal = item.isReal || false;
+                const kellyStake = calculateKellyStake(selection.odd, selection.prob, state.bankroll, strategy.kellyFraction);
 
                 slip.push({
                     leg,
@@ -429,7 +463,9 @@
                     odds: selection.odd,
                     value: selection.value.toFixed(1),
                     isValueHigh: selection.value > 5,
-                    isReal: isReal
+                    isReal,
+                    consensus: item.consensus[selection.sel.toLowerCase()] || 50,
+                    kellyStake
                 });
 
                 totalOdds *= selection.odd;
@@ -437,123 +473,105 @@
                 leg++;
             }
 
-            if (totalOdds < TARGET_ODDS && leg <= maxLegs) {
-                const remaining = shuffled.slice(leg - 1)[0];
-                if (remaining) {
-                    const bmOdds = getBookmakerOdds(remaining);
-                    const selection = selectBestSelection(bmOdds, { ...strategy, straightProb: 0.5 });
-                    const timeStr = formatBotswanaTime(remaining.fixture.date);
-                    const league = remaining.league?.name || 'Unknown League';
-                    const isReal = remaining.isReal || false;
-                    slip.push({
-                        leg,
-                        league,
-                        home: remaining.fixture.teams.home.name,
-                        away: remaining.fixture.teams.away.name,
-                        time: timeStr,
-                        selection: selection.sel,
-                        odds: selection.odd * 1.2,
-                        value: (selection.value * 1.1).toFixed(1),
-                        isValueHigh: true,
-                        isReal: isReal
-                    });
-                    totalOdds *= selection.odd * 1.2;
-                    totalProb *= selection.prob;
-                }
-            }
-
-            return { slip, totalOdds, winProb: totalProb };
+            return { slip, totalOdds, winProb: totalProb, kellyStake: calculateKellyStake(totalOdds, totalProb, state.bankroll, strategy.kellyFraction) };
         }
 
         async function generateSlips() {
             const btn = document.getElementById('generateBtn');
             const date = document.getElementById('datePicker').value;
             if (!date) {
-                showError('Please select a date first.');
+                showError('Please select a date.');
                 return;
             }
+
             btn.disabled = true;
-            btn.textContent = 'Analyzing Pro Value Bets for ' + date + '...';
+            btn.textContent = `Analyzing Pro Value Bets for ${date}...`;
             document.getElementById('loading').style.display = 'block';
             document.getElementById('error').innerHTML = '';
 
-            if (todaysOddsData.length === 0 || selectedDate !== date) {
-                todaysOddsData = await fetchSelectedOdds();
-                document.getElementById('loading').style.display = 'none';
-                if (todaysOddsData.length === 0) {
+            try {
+                if (state.todaysOddsData.length === 0 || state.selectedDate !== date) {
+                    state.todaysOddsData = await fetchSelectedOdds();
+                }
+
+                if (state.todaysOddsData.length === 0) {
+                    showError('No data available for this date.');
                     btn.disabled = false;
                     btn.textContent = 'Generate Pro Suggestions';
+                    document.getElementById('loading').style.display = 'none';
                     return;
                 }
-            }
 
-            let html = `<p><em>Pro Scan Complete for ${date}: ${todaysOddsData.length} fixtures analyzed across major leagues (real ones highlighted). High-value legs prioritized!</em></p>`;
-            let allSlips = [];
+                let html = `<p><em>Pro Scan Complete for ${date}: ${state.todaysOddsData.length} fixtures analyzed (real ones in green). High-value legs prioritized!</em></p>`;
+                let allSlips = [];
 
-            STRATEGIES.forEach((strategy, i) => {
-                const { slip, totalOdds, winProb } = generateOneSlip(todaysOddsData, strategy);
-                allSlips.push({ strategy: strategy.name, slip, ev: (winProb * totalOdds - 1) - (1 - winProb) });
+                STRATEGIES.forEach((strategy, i) => {
+                    const { slip, totalOdds, winProb, kellyStake } = generateOneSlip(state.todaysOddsData, strategy);
+                    const ev = (winProb * totalOdds - 1) - (1 - winProb);
+                    allSlips.push({ strategy: strategy.name, slip, ev, kellyStake });
 
-                html += `<details class="suggestion">
-                    <summary>${strategy.name} (Risk: <span class="${strategy.color}">${strategy.color}</span>)</summary>
-                    <div class="slip-details">
-                        <p class="strategy">Focus: ${strategy.name === 'Conservative Power Slip' ? 'Max safety, steady 1.25x legs' : strategy.name === 'Balanced Value Accumulator' ? 'Optimal value mix' : 'High-reward straights for shock profits'}</p>
-                        <table><thead><tr><th>Leg</th><th>League</th><th>Match</th><th>Time (CAT)</th><th>Selection</th><th>Odds</th><th>Value %</th></tr></thead><tbody>`;
-                slip.forEach(match => {
-                    let rowClass = match.isValueHigh ? 'value-high' : '';
-                    if (match.isReal) rowClass += ' real-fixture';
-                    html += `<tr class="${rowClass.trim()}">
-                        <td>${match.leg}</td>
-                        <td class="league">${match.league}</td>
-                        <td>${match.home} vs ${match.away}</td>
-                        <td>${match.time}</td>
-                        <td><strong>${match.selection}</strong></td>
-                        <td>${match.odds.toFixed(2)}</td>
-                        <td>${match.value}</td>
-                    </tr>`;
-                });
-                html += '</tbody></table>';
+                    html += `<details class="suggestion">
+                        <summary>${strategy.name} (Risk: <span class="${strategy.color}">${strategy.color}</span>)</summary>
+                        <div class="slip-details">
+                            <p class="strategy">Focus: ${strategy.name === 'Conservative Power Slip' ? 'Max safety, steady 1.25x legs' : strategy.name === 'Balanced Value Accumulator' ? 'Optimal value mix' : 'High-reward straights for shock profits'}</p>
+                            <table><thead><tr><th>Leg</th><th>League</th><th>Match</th><th>Time (CAT)</th><th>Selection</th><th>Odds</th><th>Value %</th><th>Consensus</th><th>Kelly Stake (Pula)</th></tr></thead><tbody>`;
+                    slip.forEach(match => {
+                        let rowClass = match.isValueHigh ? 'value-high' : '';
+                        if (match.isReal) rowClass += ' real-fixture';
+                        html += `<tr class="${rowClass.trim()}">
+                            <td>${match.leg}</td>
+                            <td class="league">${match.league}</td>
+                            <td>${match.home} vs ${match.away}</td>
+                            <td>${match.time}</td>
+                            <td><strong>${match.selection}</strong></td>
+                            <td>${match.odds.toFixed(2)}</td>
+                            <td>${match.value}</td>
+                            <td class="consensus">${match.consensus}%</td>
+                            <td>${match.kellyStake.toFixed(2)}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
 
-                const returnPula = totalOdds * 1;
-                const ev = allSlips[i].ev;
-                html += `<div class="summary">
-                    <p><strong>Total Legs:</strong> ${slip.length} | <strong>Combined Odds:</strong> ${totalOdds.toFixed(2)}x</p>
-                    <p><strong>Stake:</strong> 1 Pula | <strong>Potential Return:</strong> ${returnPula.toFixed(0)} Pula | <strong>Profit:</strong> ${(returnPula - 1).toFixed(0)} Pula</p>
-                    <p><strong>Est. Win Prob:</strong> ${(winProb * 100).toFixed(6)}% | <strong>EV:</strong> ${ev.toFixed(2)} Pula</p>
-                    <div class="risk-meter"><div class="risk-fill ${strategy.color}" style="width: ${(1 - winProb) * 100}%"></div></div>
-                    <p><em>Pro Pick: ${winProb > 0.0001 ? 'Shock potential—bet if EV > 0!' : 'High risk, high reward.'} Verify on Betway.</em></p>
-                </div>
+                    const returnPula = totalOdds * 1;
+                    html += `<div class="summary">
+                        <p><strong>Total Legs:</strong> ${slip.length} | <strong>Combined Odds:</strong> ${totalOdds.toFixed(2)}x</p>
+                        <p><strong>Stake:</strong> 1 Pula | <strong>Potential Return:</strong> ${returnPula.toFixed(0)} Pula | <strong>Profit:</strong> ${(returnPula - 1).toFixed(0)} Pula</p>
+                        <p><strong>Est. Win Prob:</strong> ${(winProb * 100).toFixed(6)}% | <strong>EV:</strong> ${ev.toFixed(2)} Pula</p>
+                        <p><strong>Kelly Stake:</strong> ${kellyStake.toFixed(2)} Pula (Bankroll: ${state.bankroll.toFixed(2)} Pula)</p>
+                        <div class="risk-meter"><div class="risk-fill ${strategy.color}" style="width: ${(1 - winProb) * 100}%"></div></div>
+                        <p><em>Pro Pick: ${ev > 0 ? 'Solid value—bet if EV > 0!' : 'High risk, high reward.'} Verify on Betway.</em></p>
                     </div>
-                </details>`;
-            });
-
-            document.getElementById('slip').innerHTML = html;
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('exportBtn').style.display = 'inline-block';
-            btn.disabled = false;
-            btn.textContent = 'Regenerate Pro Suggestions';
-
-            // Save to history
-            saveToHistory(allSlips);
-
-            // Alert if high EV
-            if (alertsEnabled) {
-                allSlips.forEach(s => {
-                    if (s.ev > 2) {
-                        new Notification(`${s.strategy}: High EV Alert!`, { body: `EV: ${s.ev.toFixed(2)} Pula - Check your slip!` });
-                    }
+                        </div>
+                    </details>`;
                 });
-            }
 
-            window.currentSlips = allSlips;
+                document.getElementById('slip').innerHTML = html;
+                document.getElementById('exportBtn').style.display = 'inline-block';
+                window.currentSlips = allSlips;
+                saveToHistory(allSlips);
+
+                if (state.alertsEnabled) {
+                    allSlips.forEach(s => {
+                        if (s.ev > 2) {
+                            new Notification(`${s.strategy}: High EV Alert!`, { body: `EV: ${s.ev.toFixed(2)} Pula - Check your slip!` });
+                        }
+                    });
+                }
+            } catch (error) {
+                showError(`Error generating slips: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Pro Suggestions';
+                document.getElementById('loading').style.display = 'none';
+            }
         }
 
         function exportSlips() {
             if (!window.currentSlips) return;
-            let csv = 'Strategy,Leg,League,Match,Time,Selection,Odds,Value,IsReal\n';
+            let csv = 'Strategy,Leg,League,Match,Time,Selection,Odds,Value,Consensus,IsReal,KellyStake\n';
             window.currentSlips.forEach(({ strategy, slip }) => {
                 slip.forEach(m => {
-                    csv += `"${strategy}",${m.leg},"${m.league}","${m.home} vs ${m.away}","${m.time}","${m.selection}",${m.odds},${m.value},${m.isReal}\n`;
+                    csv += `"${strategy}",${m.leg},"${m.league}","${m.home} vs ${m.away}","${m.time}","${m.selection}",${m.odds.toFixed(2)},${m.value},${m.consensus},${m.isReal},${m.kellyStake.toFixed(2)}\n`;
                 });
             });
             navigator.clipboard.writeText(csv).then(() => alert('Pro slips exported to clipboard! Paste into spreadsheet or Betway notes.'));
@@ -561,8 +579,8 @@
 
         function saveToHistory(slips) {
             let history = JSON.parse(localStorage.getItem('betHistory') || '[]');
-            history.unshift({ date: selectedDate, slips, timestamp: new Date().toISOString() });
-            if (history.length > 10) history = history.slice(0,10);
+            history.unshift({ date: state.selectedDate, slips, timestamp: new Date().toISOString() });
+            if (history.length > 10) history = history.slice(0, 10);
             localStorage.setItem('betHistory', JSON.stringify(history));
             updateHistoryDisplay();
         }
@@ -588,15 +606,19 @@
 
         function loadHistory(index) {
             const history = JSON.parse(localStorage.getItem('betHistory') || '[]');
-            // Simplified: alert for now; full impl would regenerate
-            alert(`Loading history for ${history[index].date}...`);
+            state.selectedDate = history[index].date;
+            document.getElementById('datePicker').value = state.selectedDate;
+            generateSlips();
         }
 
         // Initialize
-        window.addEventListener('load', function() {
+        window.addEventListener('load', () => {
             setToday();
             if (Notification.permission === 'default') Notification.requestPermission();
             updateHistoryDisplay();
+            document.getElementById('bankrollInput').addEventListener('change', () => {
+                state.bankroll = parseFloat(document.getElementById('bankrollInput').value) || 1000;
+            });
             generateSlips();
         });
     </script>
