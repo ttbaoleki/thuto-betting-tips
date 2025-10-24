@@ -17,12 +17,14 @@
         th { background-color: #f2f2f2; }
         .summary { font-size: 18px; font-weight: bold; margin-top: 20px; padding: 10px; background: #e7f3ff; border-radius: 5px; }
         .disclaimer { font-size: 12px; color: #666; text-align: center; margin-top: 20px; }
+        #loading { text-align: center; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
     <h1>Bet with Thuto</h1>
     <p style="text-align: center;">Generate multiple high-potential soccer accumulator suggestions for Betway. Each focuses on double chances for safer multiplication, with occasional straight wins to boost returns. Stake: 1 Pula per slip | Target: Over 5000 Pula return per suggestion. Copy selections to Betway!</p>
-    <button onclick="generateSlips()">Generate Multiple Profitable Suggestions</button>
+    <button onclick="generateSlips()">Generate New Multiple Profitable Suggestions</button>
+    <div id="loading">Loading initial suggestions...</div>
     <div id="slip"></div>
     <div class="disclaimer">Disclaimer: Betting involves risk. This is for entertainment and suggestion only. Odds are simulated based on typical ranges; check Betway for real odds. Always gamble responsibly.</div>
 
@@ -140,7 +142,13 @@
             }
 
             document.getElementById('slip').innerHTML = html;
+            document.getElementById('loading').style.display = 'none'; // Hide loading after first generate
         }
+
+        // Auto-generate on page load to show content immediately
+        window.addEventListener('load', function() {
+            generateSlips();
+        });
     </script>
 </body>
 </html>
