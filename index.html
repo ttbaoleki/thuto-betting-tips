@@ -116,15 +116,42 @@
         }
 
         function generateFallbackData() {
-            // Enhanced demo with simulated real-like data
-            return [
-                { fixture: { id: 123, date: '2025-10-24T19:00:00Z', teams: { home: { name: 'Arsenal' }, away: { name: 'Liverpool' } }, league: { name: 'Premier League' } },
-                  bookmakers: [{ name: 'Betway', response: [{ name: 'Full Time', bookmakers: [{ id: 1, name: 'H': 2.10, 'D': 3.40, 'A': 3.20 }] }] }] },
-                // Add 10-20 more for realism; in real, 50+
-                { fixture: { id: 124, date: '2025-10-24T20:45:00Z', teams: { home: { name: 'Real Madrid' }, away: { name: 'Barcelona' } }, league: { name: 'La Liga' } },
-                  bookmakers: [{ name: 'Betway', response: [{ name: 'Full Time', bookmakers: [{ id: 1, name: 'H': 1.80, 'D': 3.60, 'A': 4.00 }] }] }] },
-                // ... (simulate more)
-            ];
+            // Enhanced demo with 25+ simulated real-like data for Oct 24, 2025 (future fixtures invented for demo)
+            const leagues = ['Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Champions League', 'Europa League'];
+            const teamsHome = ['Arsenal', 'Liverpool', 'Man City', 'Chelsea', 'Man United', 'Tottenham', 'Real Madrid', 'Barcelona', 'Atletico Madrid', 'Sevilla', 'Juventus', 'Inter Milan', 'AC Milan', 'Napoli', 'Bayern Munich', 'Borussia Dortmund', 'RB Leipzig', 'PSG', 'Marseille', 'Lyon', 'Ajax', 'PSV', 'Porto', 'Benfica', 'Celtic'];
+            const teamsAway = [...teamsHome].sort(() => Math.random() - 0.5); // Shuffle for variety
+            const data = [];
+            for (let i = 0; i < 25; i++) {
+                const league = leagues[Math.floor(Math.random() * leagues.length)];
+                const home = teamsHome[Math.floor(Math.random() * teamsHome.length)];
+                const away = teamsAway.find(t => t !== home) || teamsAway[0];
+                const hour = 12 + Math.floor(Math.random() * 12); // Afternoon/evening UTC
+                const dateStr = `2025-10-24T${hour.toString().padStart(2, '0')}:00:00Z`;
+                const hOdd = (1.5 + Math.random() * 2.5).toFixed(2);
+                const dOdd = (3.0 + Math.random() * 1.0).toFixed(2);
+                const aOdd = (2.0 + Math.random() * 3.0).toFixed(2);
+                data.push({
+                    fixture: { 
+                        id: 1000 + i, 
+                        date: dateStr, 
+                        teams: { home: { name: home }, away: { name: away } }, 
+                        league: { name: league } 
+                    },
+                    bookmakers: [{ 
+                        name: 'Betway', 
+                        response: [{ 
+                            name: 'Full Time', 
+                            bookmakers: [{ 
+                                id: 1, 
+                                H: parseFloat(hOdd), 
+                                D: parseFloat(dOdd), 
+                                A: parseFloat(aOdd) 
+                            }] 
+                        }] 
+                    }]
+                });
+            }
+            return data;
         }
 
         function showError(msg) {
@@ -148,15 +175,15 @@
                         if (resp.name === 'Full Time') {
                             for (let sub of resp.bookmakers || []) {
                                 if (sub.id === 1) { // Assuming id 1 is 1X2
-                                    return { H: parseFloat(sub.name.H || sub.H), D: parseFloat(sub.name.D || sub.D), A: parseFloat(sub.name.A || sub.A) };
+                                    return { H: parseFloat(sub.H || sub.name?.H), D: parseFloat(sub.D || sub.name?.D), A: parseFloat(sub.A || sub.name?.A) };
                                 }
                             }
                         }
                     }
                 }
             }
-            // Fallback to first available
-            return { H: 2.0 + Math.random(), D: 3.0 + Math.random(), A: 2.5 + Math.random() };
+            // Fallback to random realistic
+            return { H: 2.0 + Math.random() * 2, D: 3.0 + Math.random() * 0.5, A: 2.5 + Math.random() * 2.5 };
         }
 
         function calculateDoubleChances(h, d, a) {
