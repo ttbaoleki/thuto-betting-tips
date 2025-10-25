@@ -48,6 +48,7 @@
         .value-high { background: #e8f5e8; }
         .consensus { background: #fff3cd; padding: 3px; border-radius: 3px; font-size: 0.8em; }
         .export-btn { background: linear-gradient(135deg, #2196F3, #1976D2); }
+        .verify-btn { background: linear-gradient(135deg, #FF9800, #F57C00); }
         .disclaimer { padding: 20px; text-align: center; background: #fff3cd; color: #856404; border-radius: 5px; margin: 20px; }
         #loading { text-align: center; color: #666; font-style: italic; padding: 20px; }
         #error { text-align: center; color: #d32f2f; font-weight: bold; padding: 10px; background: #ffebee; border-radius: 5px; margin: 10px; }
@@ -61,6 +62,7 @@
         .expert-section { margin: 20px 0; padding: 15px; background: #e3f2fd; border-radius: 8px; }
         .expert { display: inline-block; margin: 5px; padding: 8px; background: white; border-radius: 5px; cursor: pointer; }
         .expert:hover { background: #4CAF50; color: white; }
+        .demo-warning { background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px; color: #856404; }
     </style>
 </head>
 <body>
@@ -93,7 +95,9 @@
             <button id="generateBtn" onclick="generateSlips()">Generate Pro Suggestions</button>
             <button class="alert-btn" onclick="toggleAlerts()">Toggle High-EV Alerts</button>
             <button class="export-btn" onclick="exportSlips()" id="exportBtn" style="display:none;">Export All Slips to Clipboard</button>
+            <button class="verify-btn" onclick="verifyFixtures()">Verify Real Fixtures</button>
             <div class="calendar-note">Pro Calendar: Pick any date to scan fixtures—API fetches real schedules for that date only (Botswana CAT, UTC+2).</div>
+            <div id="demoWarning" class="demo-warning" style="display:none;">Demo Mode Active: Simulated fixtures used. Add a valid API key for real data!</div>
         </div>
         <div class="expert-section">
             <h3>Follow Hot Experts (Action Network Style)</h3>
@@ -108,7 +112,7 @@
             <h3>Action Network-Inspired Pro Tips</h3>
             <ul>
                 <li><strong>Consensus Edge:</strong> Bet where 70%+ experts agree—boosts win prob by 15% historically.</li>
-                <li><strong>Kelly Criterion:</strong> Optimal stakes calculated (25% Kelly) to maximize growth, minimize risk.</li>
+                <li><strong>Kelly Criterion:</strong> Optimal stakes calculated (25-40% Kelly) to maximize growth, minimize risk.</li>
                 <li><strong>Track & Adjust:</strong> Log slips below; review EV trends (aim for +EV > 5%).</li>
                 <li><strong>Alerts On:</strong> Get notifications for slips with EV > 2 Pula.</li>
                 <li><strong>Poisson Projections:</strong> AI uses goal models with home bias for accurate probs.</li>
@@ -123,7 +127,7 @@
             <div id="historyList"></div>
         </div>
         <div class="disclaimer">
-            <strong>Pro Tip:</strong> Focus on value legs (green). Real fixtures in light green. Verify on Betway. Betting risks loss; use Kelly stakes. Gamble responsibly!
+            <strong>Pro Tip:</strong> Focus on value legs (green). Real fixtures in light green. Verify on Betway or Flashscore. Betting risks loss; use Kelly stakes. Gamble responsibly!
         </div>
     </div>
 
@@ -154,25 +158,15 @@
         };
 
         const REAL_FIXTURES_BY_DATE = {
-            '2025-10-24': [
-                { league: 'Premier League', home: 'Leeds United', away: 'West Ham United', utcTime: '2025-10-24T19:00:00Z' },
-                { league: 'Bundesliga', home: 'Werder Bremen', away: 'Union Berlin', utcTime: '2025-10-24T18:30:00Z' },
-                { league: 'Serie A', home: 'Bologna', away: 'Hellas Verona', utcTime: '2025-10-24T18:45:00Z' },
-                { league: 'La Liga', home: 'Rayo Vallecano', away: 'Atletico Madrid', utcTime: '2025-10-24T20:00:00Z' },
-                { league: 'Ligue 1', home: 'Toulouse', away: 'Lille', utcTime: '2025-10-24T19:45:00Z' },
-                { league: 'Eredivisie', home: 'Go Ahead Eagles', away: 'Fortuna Sittard', utcTime: '2025-10-24T18:00:00Z' },
-                { league: 'Primeira Liga', home: 'Boavista', away: 'Rio Ave', utcTime: '2025-10-24T19:30:00Z' },
-                { league: 'UEFA Conference League', home: 'PAOK', away: 'Ludogorets', utcTime: '2025-10-24T17:45:00Z' },
-                { league: 'Sky Bet Championship', home: 'Blackburn Rovers', away: 'Middlesbrough', utcTime: '2025-10-24T19:45:00Z' },
-                { league: 'Scottish League 1', home: 'Falkirk', away: 'Alloa Athletic', utcTime: '2025-10-24T19:45:00Z' },
-                { league: 'MLS', home: 'LA Galaxy', away: 'LAFC', utcTime: '2025-10-24T03:30:00Z' },
-                { league: 'Brasileirão', home: 'Flamengo', away: 'Palmeiras', utcTime: '2025-10-24T00:30:00Z' }
-            ],
             '2025-10-25': [
-                { league: 'Premier League', home: 'Brentford', away: 'Liverpool', utcTime: '2025-10-25T15:00:00Z' },
-                { league: 'Premier League', home: 'Everton', away: 'Fulham', utcTime: '2025-10-25T15:00:00Z' },
+                { league: 'Premier League', home: 'Chelsea', away: 'Sunderland', utcTime: '2025-10-25T16:00:00Z' },
+                { league: 'Premier League', home: 'Newcastle United', away: 'Fulham', utcTime: '2025-10-25T16:00:00Z' },
+                { league: 'Premier League', home: 'Manchester United', away: 'Leicester City', utcTime: '2025-10-25T18:30:00Z' },
                 { league: 'Champions League', home: 'PSV Eindhoven', away: 'Sporting CP', utcTime: '2025-10-25T20:00:00Z' },
-                { league: 'Champions League', home: 'Atalanta', away: 'Benfica', utcTime: '2025-10-25T20:00:00Z' }
+                { league: 'Champions League', home: 'Atalanta', away: 'Benfica', utcTime: '2025-10-25T20:00:00Z' },
+                { league: 'Serie A', home: 'Bologna', away: 'Hellas Verona', utcTime: '2025-10-25T18:45:00Z' },
+                { league: 'La Liga', home: 'Rayo Vallecano', away: 'Atletico Madrid', utcTime: '2025-10-25T20:00:00Z' },
+                { league: 'Ligue 1', home: 'Toulouse', away: 'Lille', utcTime: '2025-10-25T19:45:00Z' }
             ]
         };
 
@@ -219,6 +213,7 @@
         function showError(msg) {
             document.getElementById('error').innerHTML = `<p>${msg}</p>`;
             document.getElementById('loading').style.display = 'none';
+            document.getElementById('demoWarning').style.display = msg.includes('demo') ? 'block' : 'none';
         }
 
         function formatBotswanaTime(utcDateStr) {
@@ -229,6 +224,11 @@
             });
         }
 
+        function verifyFixtures() {
+            const date = state.selectedDate.replace(/-/g, '/');
+            window.open(`https://www.flashscore.com/football/${date}/`, '_blank');
+        }
+
         // Data Fetching
         async function fetchSelectedOdds() {
             state.selectedDate = document.getElementById('datePicker').value || setToday();
@@ -236,22 +236,24 @@
             state.bankroll = parseFloat(document.getElementById('bankrollInput').value) || 1000;
 
             if (!state.apiKey) {
-                showError('Enter API key for real odds. Using demo data for ' + state.selectedDate + '.');
+                showError('No API key entered—using demo data. Sign up at api-sports.io for real fixtures.');
                 return generateFallbackData();
             }
 
             try {
                 const fixturesUrl = `https://v3.football.api-sports.io/fixtures?date=${state.selectedDate}`;
-                let response = await fetch(fixturesUrl, {
+                const response = await fetch(fixturesUrl, {
                     method: 'GET',
                     headers: { 'x-rapidapi-key': state.apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' }
                 });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                let fixturesData = await response.json();
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}. Check your key or quota.`);
+                }
+                const fixturesData = await response.json();
                 let fixtures = fixturesData.response || [];
 
                 if (fixtures.length === 0) {
-                    showError(`No fixtures found for ${state.selectedDate}. Using demo data.`);
+                    showError(`No real fixtures for ${state.selectedDate}. Using demo data.`);
                     return generateFallbackData();
                 }
 
@@ -260,8 +262,10 @@
                     method: 'GET',
                     headers: { 'x-rapidapi-key': state.apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' }
                 });
-                if (!oddsResponse.ok) throw new Error(`HTTP ${oddsResponse.status}`);
-                let oddsData = await oddsResponse.json();
+                if (!oddsResponse.ok) {
+                    throw new Error(`Odds API error: ${oddsResponse.status}.`);
+                }
+                const oddsData = await oddsResponse.json();
                 return oddsData.response.map(item => ({
                     ...item,
                     isReal: true,
@@ -270,9 +274,9 @@
                         'X': Math.floor(20 + Math.random() * 20),
                         '2': Math.floor(30 + Math.random() * 40)
                     }
-                })) || [];
+                })) || generateFallbackData();
             } catch (error) {
-                showError(`Fetch failed for ${state.selectedDate}: ${error.message}. Using demo data.`);
+                showError(`Fetch failed: ${error.message}. Falling back to demo data. Get a free key at api-sports.io.`);
                 return generateFallbackData();
             }
         }
@@ -289,15 +293,14 @@
                 },
                 bookmakers: [{ 
                     name: 'Betway', 
-                    response: [{ 
-                        name: 'Full Time', 
-                        bookmakers: [{ 
-                            id: 1, 
-                            H: parseFloat((1.5 + Math.random() * 2.5).toFixed(2)), 
-                            D: parseFloat((3.0 + Math.random() * 1.0).toFixed(2)), 
-                            A: parseFloat((2.0 + Math.random() * 3.0).toFixed(2)) 
-                        }] 
-                    }] 
+                    bets: [{ 
+                        name: 'Match Winner', 
+                        values: [
+                            { value: 'Home', odd: parseFloat((1.5 + Math.random() * 2.5).toFixed(2)) },
+                            { value: 'Draw', odd: parseFloat((3.0 + Math.random() * 1.0).toFixed(2)) },
+                            { value: 'Away', odd: parseFloat((2.0 + Math.random() * 3.0).toFixed(2)) }
+                        ]
+                    }]
                 }],
                 isReal: true,
                 consensus: {
@@ -307,12 +310,13 @@
                 }
             }));
 
-            const extraLeagues = ['MLS', 'Brasileirão', 'J-League', 'A-League'];
+            const extraLeagues = ['Premier League', 'Serie A', 'La Liga', 'Ligue 1', 'Bundesliga'];
             const extraTeams = {
-                'MLS': ['LA Galaxy', 'Inter Miami', 'LAFC', 'Seattle Sounders'],
-                'Brasileirão': ['Flamengo', 'Palmeiras', 'Santos', 'Corinthians'],
-                'J-League': ['Kashima Antlers', 'Urawa Red Diamonds', 'Yokohama F Marinos'],
-                'A-League': ['Melbourne Victory', 'Sydney FC', 'Central Coast Mariners']
+                'Premier League': ['Arsenal', 'Tottenham', 'Brighton', 'Aston Villa'],
+                'Serie A': ['Juventus', 'AC Milan', 'Inter', 'Napoli'],
+                'La Liga': ['Real Madrid', 'Barcelona', 'Sevilla', 'Valencia'],
+                'Ligue 1': ['PSG', 'Monaco', 'Marseille', 'Lens'],
+                'Bundesliga': ['Bayern Munich', 'Dortmund', 'Leipzig', 'Frankfurt']
             };
             for (let i = 0; i < Math.min(10, 20 - data.length); i++) {
                 const league = extraLeagues[Math.floor(Math.random() * extraLeagues.length)];
@@ -323,9 +327,6 @@
                 const away = teams[awayIdx];
                 const hour = 12 + Math.floor(Math.random() * 12);
                 const dateStr = `${date}T${hour.toString().padStart(2, '0')}:00:00Z`;
-                const hOdd = (1.5 + Math.random() * 2.5).toFixed(2);
-                const dOdd = (3.0 + Math.random() * 1.0).toFixed(2);
-                const aOdd = (2.0 + Math.random() * 3.0).toFixed(2);
                 data.push({
                     fixture: { 
                         id: 10000 + i, 
@@ -335,15 +336,14 @@
                     },
                     bookmakers: [{ 
                         name: 'Betway', 
-                        response: [{ 
-                            name: 'Full Time', 
-                            bookmakers: [{ 
-                                id: 1, 
-                                H: parseFloat(hOdd), 
-                                D: parseFloat(dOdd), 
-                                A: parseFloat(aOdd) 
-                            }] 
-                        }] 
+                        bets: [{ 
+                            name: 'Match Winner', 
+                            values: [
+                                { value: 'Home', odd: parseFloat((1.5 + Math.random() * 2.5).toFixed(2)) },
+                                { value: 'Draw', odd: parseFloat((3.0 + Math.random() * 1.0).toFixed(2)) },
+                                { value: 'Away', odd: parseFloat((2.0 + Math.random() * 3.0).toFixed(2)) }
+                            ]
+                        }]
                     }],
                     isReal: false,
                     consensus: {
@@ -368,13 +368,15 @@
         function getBookmakerOdds(oddsData, bookmakerName = 'Betway') {
             for (let bm of oddsData.bookmakers || []) {
                 if (bm.name === bookmakerName) {
-                    for (let resp of bm.response || []) {
-                        if (resp.name === 'Full Time') {
-                            for (let sub of resp.bookmakers || []) {
-                                if (sub.id === 1) {
-                                    return { H: parseFloat(sub.H || sub.name?.H), D: parseFloat(sub.D || sub.name?.D), A: parseFloat(sub.A || sub.name?.A) };
-                                }
-                            }
+                    for (let bet of bm.bets || []) {
+                        if (bet.name === 'Match Winner') {
+                            const odds = {};
+                            bet.values.forEach(v => {
+                                if (v.value === 'Home') odds.H = parseFloat(v.odd);
+                                if (v.value === 'Draw') odds.D = parseFloat(v.odd);
+                                if (v.value === 'Away') odds.A = parseFloat(v.odd);
+                            });
+                            return odds.H ? odds : { H: 2.0, D: 3.0, A: 2.5 };
                         }
                     }
                 }
@@ -488,6 +490,7 @@
             btn.textContent = `Analyzing Pro Value Bets for ${date}...`;
             document.getElementById('loading').style.display = 'block';
             document.getElementById('error').innerHTML = '';
+            document.getElementById('demoWarning').style.display = 'none';
 
             try {
                 if (state.todaysOddsData.length === 0 || state.selectedDate !== date) {
@@ -536,10 +539,10 @@
                     html += `<div class="summary">
                         <p><strong>Total Legs:</strong> ${slip.length} | <strong>Combined Odds:</strong> ${totalOdds.toFixed(2)}x</p>
                         <p><strong>Stake:</strong> 1 Pula | <strong>Potential Return:</strong> ${returnPula.toFixed(0)} Pula | <strong>Profit:</strong> ${(returnPula - 1).toFixed(0)} Pula</p>
-                        <p><strong>Est. Win Prob:</strong> ${(winProb * 100).toFixed(6)}% | <strong>EV:</strong> ${ev.toFixed(2)} Pula</p>
+                        <p><strong>Est. Win Prob:</strong> ${(winProb * 100).toFixed(2)}% | <strong>EV:</strong> ${ev.toFixed(2)} Pula</p>
                         <p><strong>Kelly Stake:</strong> ${kellyStake.toFixed(2)} Pula (Bankroll: ${state.bankroll.toFixed(2)} Pula)</p>
                         <div class="risk-meter"><div class="risk-fill ${strategy.color}" style="width: ${(1 - winProb) * 100}%"></div></div>
-                        <p><em>Pro Pick: ${ev > 0 ? 'Solid value—bet if EV > 0!' : 'High risk, high reward.'} Verify on Betway.</em></p>
+                        <p><em>Pro Pick: ${ev > 0 ? 'Solid value—bet if EV > 0!' : 'High risk, high reward.'} Verify on Betway or Flashscore.</em></p>
                     </div>
                         </div>
                     </details>`;
