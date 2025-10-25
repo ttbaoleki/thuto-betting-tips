@@ -158,15 +158,17 @@
         };
 
         const REAL_FIXTURES_BY_DATE = {
-            '2025-10-25': [
-                { league: 'Premier League', home: 'Chelsea', away: 'Sunderland', utcTime: '2025-10-25T16:00:00Z' },
-                { league: 'Premier League', home: 'Newcastle United', away: 'Fulham', utcTime: '2025-10-25T16:00:00Z' },
-                { league: 'Premier League', home: 'Manchester United', away: 'Leicester City', utcTime: '2025-10-25T18:30:00Z' },
-                { league: 'Champions League', home: 'PSV Eindhoven', away: 'Sporting CP', utcTime: '2025-10-25T20:00:00Z' },
-                { league: 'Champions League', home: 'Atalanta', away: 'Benfica', utcTime: '2025-10-25T20:00:00Z' },
-                { league: 'Serie A', home: 'Bologna', away: 'Hellas Verona', utcTime: '2025-10-25T18:45:00Z' },
-                { league: 'La Liga', home: 'Rayo Vallecano', away: 'Atletico Madrid', utcTime: '2025-10-25T20:00:00Z' },
-                { league: 'Ligue 1', home: 'Toulouse', away: 'Lille', utcTime: '2025-10-25T19:45:00Z' }
+            '2025-10-26': [
+                { league: 'Ligue 1', home: 'Lille', away: 'Metz', utcTime: '2025-10-26T07:00:00Z' }, // 09:00 CAT
+                { league: 'Ligue 1', home: 'Auxerre', away: 'Le Havre', utcTime: '2025-10-26T09:15:00Z' }, // 11:15 CAT
+                { league: 'Ligue 1', home: 'Rennes', away: 'Monaco', utcTime: '2025-10-26T09:15:00Z' }, // 11:15 CAT
+                { league: 'Ligue 1', home: 'Angers', away: 'Lorient', utcTime: '2025-10-26T09:15:00Z' }, // 11:15 CAT
+                { league: 'Ligue 1', home: 'Toulouse', away: 'PSG', utcTime: '2025-10-26T12:45:00Z' }, // 14:45 CAT
+                { league: 'Ligue 1', home: 'Lens', away: 'Marseille', utcTime: '2025-10-26T19:45:00Z' }, // 21:45 CAT
+                { league: 'Premier League', home: 'Arsenal', away: 'Brighton', utcTime: '2025-10-26T13:30:00Z' }, // 15:30 CAT
+                { league: 'Premier League', home: 'Tottenham', away: 'Aston Villa', utcTime: '2025-10-26T15:00:00Z' }, // 17:00 CAT
+                { league: 'Serie A', home: 'Juventus', away: 'Napoli', utcTime: '2025-10-26T18:00:00Z' }, // 20:00 CAT
+                { league: 'La Liga', home: 'Barcelona', away: 'Sevilla', utcTime: '2025-10-26T19:00:00Z' } // 21:00 CAT
             ]
         };
 
@@ -265,7 +267,7 @@
                 if (!oddsResponse.ok) {
                     throw new Error(`Odds API error: ${oddsResponse.status}.`);
                 }
-                const oddsData = await oddsResponse.json();
+                const oddsData = await response.json();
                 return oddsData.response.map(item => ({
                     ...item,
                     isReal: true,
@@ -312,11 +314,11 @@
 
             const extraLeagues = ['Premier League', 'Serie A', 'La Liga', 'Ligue 1', 'Bundesliga'];
             const extraTeams = {
-                'Premier League': ['Arsenal', 'Tottenham', 'Brighton', 'Aston Villa'],
-                'Serie A': ['Juventus', 'AC Milan', 'Inter', 'Napoli'],
-                'La Liga': ['Real Madrid', 'Barcelona', 'Sevilla', 'Valencia'],
-                'Ligue 1': ['PSG', 'Monaco', 'Marseille', 'Lens'],
-                'Bundesliga': ['Bayern Munich', 'Dortmund', 'Leipzig', 'Frankfurt']
+                'Premier League': ['Chelsea', 'Newcastle United', 'Manchester United', 'Liverpool'],
+                'Serie A': ['Inter', 'AC Milan', 'Roma', 'Lazio'],
+                'La Liga': ['Real Madrid', 'Atletico Madrid', 'Valencia', 'Villarreal'],
+                'Ligue 1': ['Lyon', 'Nice', 'Brest', 'Nantes'],
+                'Bundesliga': ['Bayern Munich', 'Dortmund', 'Leverkusen', 'Stuttgart']
             };
             for (let i = 0; i < Math.min(10, 20 - data.length); i++) {
                 const league = extraLeagues[Math.floor(Math.random() * extraLeagues.length)];
